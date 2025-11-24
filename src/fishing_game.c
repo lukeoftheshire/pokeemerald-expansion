@@ -50,6 +50,7 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 
+
 static void Task_UnableToUseOW(u8 taskId);
 static void LoadFishingSpritesheets(void);
 static void CreateMinigameSprites(u8 taskId);
@@ -743,9 +744,9 @@ void CB2_InitFishingMinigame(void)
     DmaFill32(3, 0, OAM, OAM_SIZE);
     DmaFill16(3, 0, PLTT, PLTT_SIZE);
 
-    LZ77UnCompVram(gFishingGameBG_Gfx, (void *)VRAM);
-    LZ77UnCompVram(gScoreBG_Tilemap, (void *)(BG_SCREEN_ADDR(6)));
-    LZ77UnCompVram(gFishingGameBG_Tilemap, (void *)(BG_SCREEN_ADDR(7)));
+    FastLZ77UnCompWram(gFishingGameBG_Gfx, (void *)VRAM);
+    FastLZ77UnCompWram(gScoreBG_Tilemap, (void *)(BG_SCREEN_ADDR(6)));
+    FastLZ77UnCompWram(gFishingGameBG_Tilemap, (void *)(BG_SCREEN_ADDR(7)));
 
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sBgTemplates, ARRAY_COUNT(sBgTemplates));
@@ -803,7 +804,7 @@ void Task_InitOWFishingMinigame(u8 taskId)
     }
 
     tilemapBuffer = AllocZeroed(GetDecompressedDataSize(gFishingGameOWBG_Gfx));
-    LZDecompressWram(gFishingGameOWBG_Gfx, tilemapBuffer);
+    DecompressDataWithHeaderWram(gFishingGameOWBG_Gfx, tilemapBuffer);
     CopyToBgTilemapBuffer(0, gFishingGameOWBG_Tilemap, 0, 0);
     CopyBgTilemapBufferToVram(0);
     LoadPalette(gFishingGameOWBG_Pal, BG_PLTT_ID(13), PLTT_SIZE_4BPP);
@@ -2255,7 +2256,7 @@ void Task_DoReturnToFieldFishTreasure(u8 taskId)
                 {
                     PlaySE(SE_SELECT);
 
-                    switch (GetPocketByItemId(gSpecialVar_ItemId))
+                    switch (GetItemPocket(gSpecialVar_ItemId))
                     {
                         case POCKET_ITEMS:
                             StringCopy(gStringVar3, gText_Items);
@@ -2272,6 +2273,10 @@ void Task_DoReturnToFieldFishTreasure(u8 taskId)
                         case POCKET_KEY_ITEMS:
                             StringCopy(gStringVar3, gText_Key_Items);
                             break;
+                        default:
+                            // covers POCKET_DUMMY, POCKETS_COUNT, and anything unexpected
+                            break;
+
                     }
                 }
 
