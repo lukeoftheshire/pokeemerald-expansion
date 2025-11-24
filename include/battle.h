@@ -134,7 +134,7 @@ struct DisableStruct
     u8 endured:1;
     u8 octolockedBy:3;
     u8 tryEjectPack:1;
-    u8 padding:4;
+    u8 paradoxBoostedStat:4;
 };
 
 // Fully Cleared each turn after end turn effects are done. A few things are cleared before end turn effects
@@ -197,8 +197,8 @@ struct SpecialStatus
     u8 switchInItemDone:1;
     u8 instructedChosenTarget:3;
     u8 berryReduced:1;
-    u8 announceNeutralizingGas:1;   // See Cmd_switchineffects
     u8 neutralizingGasRemoved:1;    // See VARIOUS_TRY_END_NEUTRALIZING_GAS
+    u8 padding:1;
     // End of byte
     u8 gemParam;
     // End of byte
@@ -693,7 +693,7 @@ struct BattleStruct
     u8 fickleBeamBoosted:1;
     u8 poisonPuppeteerConfusion:1;
     u16 startingStatusTimer;
-    u8 atkCancellerTracker;
+    u8 atkCancelerTracker;
     struct BattleTvMovePoints tvMovePoints;
     struct BattleTv tv;
     u8 AI_monToSwitchIntoId[MAX_BATTLERS_COUNT];
@@ -904,7 +904,7 @@ struct BattleScripting
     u8 specialTrainerBattleType;
     bool8 monCaught;
     s32 savedDmg;
-    u16 savedMoveEffect; // For moves hitting multiple targets.
+    u16 unused_0x2c;
     u16 moveEffect;
     u16 multihitMoveEffect;
     u8 illusionNickHack; // To properly display nick in STRINGID_ENEMYABOUTTOSWITCHPKMN.
@@ -1247,6 +1247,11 @@ static inline bool32 IsBattlerInvalidForSpreadMove(u32 battlerAtk, u32 battlerDe
     return battlerDef == battlerAtk
         || !IsBattlerAlive(battlerDef)
         || (battlerDef == BATTLE_PARTNER(battlerAtk) && (moveTarget == MOVE_TARGET_BOTH));
+}
+
+static inline u32 GetChosenMoveFromPosition(u32 battler)
+{
+    return gBattleMons[battler].moves[gBattleStruct->chosenMovePositions[battler]];
 }
 
 #endif // GUARD_BATTLE_H
