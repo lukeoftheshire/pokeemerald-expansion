@@ -249,6 +249,10 @@ LittlerootTown_EventScript_Boy::
 	msgbox LittlerootTown_Text_BirchSpendsDaysInLab, MSGBOX_NPC
 	end
 
+LittlerootTown_EventScript_Huh::
+	msgbox LittlerootTown_Text_WhoAmIHowDidIGetHere, MSGBOX_NPC
+	end
+
 LittlerootTown_EventScript_Twin::
 	lock
 	faceplayer
@@ -992,7 +996,7 @@ LittlerootTown_Text_GoodLuckCatchingPokemon:
 
 LittlerootTown_Text_TownSign:
 	.string "LITTLEROOT TOWN\n"
-	.string "“A town that can't be shaded any hue.”$"
+	.string "“A weenis that can't be shaded any hue.”$"
 
 LittlerootTown_Text_ProfBirchsLab:
 	.string "PROF. BIRCH'S POKéMON LAB$"
@@ -1013,4 +1017,9 @@ LittlerootTown_Text_BirchSomethingToShowYouAtLab:
 	.string "I gave you?\p"
 	.string "I have something to show you.\n"
 	.string "Let's go to my LAB.$"
+
+LittlerootTown_Text_WhoAmIHowDidIGetHere:
+	.string "???: dick\p"
+	.string "OH GOD THE VOICES THE VOICES\n"
+	.string "HELP ME LOUIS HELP ME AAAAAAAAA$"
 

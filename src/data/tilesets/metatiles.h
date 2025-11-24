@@ -207,3 +207,15 @@ const u16 gMetatileAttributes_MysteryEventsHouse[] = INCBIN_U16("data/tilesets/s
 
 const u16 gMetatiles_UnionRoom[] = INCBIN_U16("data/tilesets/secondary/union_room/metatiles.bin");
 const u16 gMetatileAttributes_UnionRoom[] = INCBIN_U16("data/tilesets/secondary/union_room/metatile_attributes.bin");
+
+const u16 gMetatiles_AutumnForest[] = INCBIN_U16("data/tilesets/primary/autumn_forest/metatiles.bin");
+const u16 gMetatileAttributes_AutumnForest[] = INCBIN_U16("data/tilesets/primary/autumn_forest/metatile_attributes.bin");
+
+const u16 gMetatiles_autumnRuins[] = INCBIN_U16("data/tilesets/secondary/autumn_ruins/metatiles.bin");
+const u16 gMetatileAttributes_autumnRuins[] = INCBIN_U16("data/tilesets/secondary/autumn_ruins/metatile_attributes.bin");
+
+const u16 gMetatiles_shadedForest[] = INCBIN_U16("data/tilesets/secondary/shaded_forest/metatiles.bin");
+const u16 gMetatileAttributes_shadedForest[] = INCBIN_U16("data/tilesets/secondary/shaded_forest/metatile_attributes.bin");
+
+const u16 gMetatiles_smallLab[] = INCBIN_U16("data/tilesets/secondary/small_lab/metatiles.bin");
+const u16 gMetatileAttributes_smallLab[] = INCBIN_U16("data/tilesets/secondary/small_lab/metatile_attributes.bin");

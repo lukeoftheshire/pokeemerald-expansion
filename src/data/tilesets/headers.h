@@ -830,3 +830,47 @@ const struct Tileset gTileset_UnionRoom =
     .metatileAttributes = gMetatileAttributes_UnionRoom,
     .callback = NULL,
 };
+
+const struct Tileset gTileset_AutumnForest =
+{
+    .isCompressed = TRUE,
+    .isSecondary = FALSE,
+    .tiles = gTilesetTiles_AutumnForest,
+    .palettes = gTilesetPalettes_AutumnForest,
+    .metatiles = gMetatiles_AutumnForest,
+    .metatileAttributes = gMetatileAttributes_AutumnForest,
+    .callback = NULL,
+};
+
+const struct Tileset gTileset_autumnRuins =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_autumnRuins,
+    .palettes = gTilesetPalettes_autumnRuins,
+    .metatiles = gMetatiles_autumnRuins,
+    .metatileAttributes = gMetatileAttributes_autumnRuins,
+    .callback = NULL,
+};
+
+const struct Tileset gTileset_shadedForest =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_shadedForest,
+    .palettes = gTilesetPalettes_shadedForest,
+    .metatiles = gMetatiles_shadedForest,
+    .metatileAttributes = gMetatileAttributes_shadedForest,
+    .callback = NULL,
+};
+
+const struct Tileset gTileset_smallLab =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_smallLab,
+    .palettes = gTilesetPalettes_smallLab,
+    .metatiles = gMetatiles_smallLab,
+    .metatileAttributes = gMetatileAttributes_smallLab,
+    .callback = NULL,
+};

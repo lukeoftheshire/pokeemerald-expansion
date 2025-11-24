@@ -1,0 +1,53 @@
+{
+  "id": "MAP_FOGVALE_GROVE",
+  "name": "FogvaleGrove",
+  "layout": "LAYOUT_FOGVALE_GROVE",
+  "music": "MUS_SEALED_CHAMBER",
+  "region_map_section": "MAPSEC_FOGVALE_GROVE",
+  "requires_flash": false,
+  "weather": "WEATHER_FOG",
+  "map_type": "MAP_TYPE_ROUTE",
+  "allow_cycling": true,
+  "allow_escaping": true,
+  "allow_running": true,
+  "show_map_name": true,
+  "battle_scene": "MAP_BATTLE_SCENE_MAGMA",
+  "connections": null,
+  "object_events": [
+    {
+      "local_id": "LOCALID_FOGVALE BRENDAN",
+      "graphics_id": "OBJ_EVENT_GFX_BRENDAN_NORMAL",
+      "x": 32,
+      "y": 33,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_NONE",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "NULL",
+      "flag": "0"
+    }
+  ],
+  "warp_events": [
+    {
+      "warp_id": "WARP_ID_FOGVALE",
+      "x": 63,
+      "y": 33,
+      "elevation": 0,
+      "dest_map": "MAP_LITTLEROOT_TOWN",
+      "dest_warp_id": "0"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 33,
+      "y": 26,
+      "elevation": 0,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "NULL"
+    }
+  ]
+}
