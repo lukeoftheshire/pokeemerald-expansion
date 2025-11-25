@@ -149,6 +149,8 @@ const struct Item gItemsInfo[] =
     {
         .name = gQuestionMarksItemName,
         .price = 0,
+        .bpPrice = 0,
+        .coinPrice = 0,
         .description = sQuestionMarksDesc,
         .pocket = POCKET_ITEMS,
         .sortType = ITEM_TYPE_UNCATEGORIZED,

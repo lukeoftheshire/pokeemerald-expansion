@@ -104,6 +104,8 @@ struct Item
     u8 type;
     u8 battleUsage;
     u8 flingPower;
+    u16 coinPrice;
+    u16 bpPrice;
     const u32 *iconPic;
     const u16 *iconPalette;
 };
@@ -231,6 +233,8 @@ bool32 AddPyramidBagItem(u16 itemId, u16 count);
 bool32 RemovePyramidBagItem(u16 itemId, u16 count);
 const u8 *GetItemName(u16 itemId);
 u32 GetItemPrice(u16 itemId);
+u32 GetItemCoinPrice(u16 itemId);
+u32 GetItemBpPrice(u16 itemId);
 const u8 *GetItemEffect(u32 itemId);
 u32 GetItemHoldEffect(u32 itemId);
 u32 GetItemHoldEffectParam(u32 itemId);

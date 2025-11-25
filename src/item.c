@@ -797,6 +797,16 @@ u32 GetItemPrice(u16 itemId)
     return gItemsInfo[SanitizeItemId(itemId)].price;
 }
 
+u32 GetItemCoinPrice(u16 itemId)
+{
+    return gItemsInfo[SanitizeItemId(itemId)].coinPrice;
+}
+
+u32 GetItemBpPrice(u16 itemId)
+{
+    return gItemsInfo[SanitizeItemId(itemId)].bpPrice;
+}
+
 static bool32 DoesItemHavePluralName(u16 itemId)
 {
     return gItemsInfo[SanitizeItemId(itemId)].pluralName != NULL;
