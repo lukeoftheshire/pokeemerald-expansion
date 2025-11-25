@@ -86,6 +86,7 @@ enum FollowerNPCCreateDebugMenu
     DEBUG_FNPC_RED,
     DEBUG_FNPC_LEAF,
     DEBUG_FNPC_COUNT,
+
 };
 
 enum FlagsVarsDebugMenu
@@ -372,6 +373,7 @@ extern const u8 Debug_ShowExpansionVersion[];
 extern const u8 Debug_EventScript_EWRAMCounters[];
 extern const u8 Debug_Follower_NPC_Event_Script[];
 extern const u8 Debug_Follower_NPC_Not_Enabled[];
+extern const u8 Debug_EventScript_Mining_Minigame[];
 extern const u8 Debug_EventScript_Steven_Multi[];
 extern const u8 Debug_EventScript_PrintTimeOfDay[];
 extern const u8 Debug_EventScript_TellTheTime[];
@@ -669,6 +671,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Main[] =
     { COMPOUND_STRING("ROM Info…"),     DebugAction_OpenSubMenu, sDebugMenu_Actions_ROMInfo2, },
     { COMPOUND_STRING("Cancel"),        DebugAction_Cancel, },
     { NULL }
+
 };
 
 // *******************************
@@ -1546,6 +1549,7 @@ static void DebugAction_Util_CheatStart(u8 taskId)
     InitTimeBasedEvents();
     Debug_DestroyMenu_Full_Script(taskId, Debug_CheatStart);
 }
+
 
 void BufferExpansionVersion(struct ScriptContext *ctx)
 {
