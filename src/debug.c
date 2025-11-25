@@ -86,7 +86,6 @@ enum FollowerNPCCreateDebugMenu
     DEBUG_FNPC_RED,
     DEBUG_FNPC_LEAF,
     DEBUG_FNPC_COUNT,
-
 };
 
 enum FlagsVarsDebugMenu
@@ -257,6 +256,8 @@ static void DebugAction_Util_Weather(u8 taskId);
 static void DebugAction_Util_Weather_SelectId(u8 taskId);
 static void DebugAction_Util_WatchCredits(u8 taskId);
 static void DebugAction_Util_CheatStart(u8 taskId);
+static void DebugAction_Util_Mining_Minigame(u8 taskId);
+
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
 static void DebugAction_TimeMenu_ChangeWeekdays(u8 taskId);
@@ -545,6 +546,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Berry Functions…"),  DebugAction_OpenSubMenu, sDebugMenu_Actions_BerryFunctions },
     { COMPOUND_STRING("EWRAM Counters…"),   DebugAction_ExecuteScript, Debug_EventScript_EWRAMCounters },
     { COMPOUND_STRING("Follower NPC…"),     DebugAction_OpenSubMenu, sDebugMenu_Actions_FollowerNPCMenu },
+    { COMPOUND_STRING("Mining Minigame"),   DebugAction_Util_Mining_Minigame},
     { COMPOUND_STRING("Steven Multi"),      DebugAction_ExecuteScript, Debug_EventScript_Steven_Multi },
     { NULL }
 };
@@ -671,7 +673,6 @@ static const struct DebugMenuOption sDebugMenu_Actions_Main[] =
     { COMPOUND_STRING("ROM Info…"),     DebugAction_OpenSubMenu, sDebugMenu_Actions_ROMInfo2, },
     { COMPOUND_STRING("Cancel"),        DebugAction_Cancel, },
     { NULL }
-
 };
 
 // *******************************
@@ -1550,6 +1551,11 @@ static void DebugAction_Util_CheatStart(u8 taskId)
     Debug_DestroyMenu_Full_Script(taskId, Debug_CheatStart);
 }
 
+
+static void DebugAction_Util_Mining_Minigame(u8 taskId)
+{
+    Debug_DestroyMenu_Full_Script(taskId, Debug_EventScript_Mining_Minigame);
+}
 
 void BufferExpansionVersion(struct ScriptContext *ctx)
 {
