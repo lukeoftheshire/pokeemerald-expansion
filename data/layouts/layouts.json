@@ -4420,6 +4420,16 @@
       "secondary_tileset": "gTileset_Petalburg",
       "border_filepath": "data/layouts/FogvaleGrove/border.bin",
       "blockdata_filepath": "data/layouts/FogvaleGrove/map.bin"
+    },
+    {
+      "id": "LAYOUT_FOGVALE_TOWN",
+      "name": "FogvaleTown_Layout",
+      "width": 30,
+      "height": 30,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Petalburg",
+      "border_filepath": "data/layouts/FogvaleTown/border.bin",
+      "blockdata_filepath": "data/layouts/FogvaleTown/map.bin"
     }
   ]
 }
