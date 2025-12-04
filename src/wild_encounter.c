@@ -28,6 +28,7 @@
 #include "constants/items.h"
 #include "constants/layouts.h"
 #include "constants/weather.h"
+#include "config/fishing_game.h"
 
 extern const u8 EventScript_SprayWoreOff[];
 
@@ -984,9 +985,13 @@ void FishingWildEncounter(u8 rod)
         species = GenerateFishingWildMon(gWildMonHeaders[headerId].encounterTypes[timeOfDay].fishingMonsInfo, rod);
     }
 
-    IncrementGameStat(GAME_STAT_FISHING_ENCOUNTERS);
+
     SetPokemonAnglerSpecies(species);
-    BattleSetup_StartWildBattle();
+    if (FG_FISH_MINIGAME_ENABLED == FALSE)
+    {
+        IncrementGameStat(GAME_STAT_FISHING_ENCOUNTERS);
+        BattleSetup_StartWildBattle();
+     }
 }
 
 u16 GetLocalWildMon(bool8 *isWaterMon)

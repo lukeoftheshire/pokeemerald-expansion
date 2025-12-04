@@ -1,5 +1,6 @@
 #include "global.h"
 #include "config/fishing_game.h"
+#include "fishing.h"
 #include "fishing_game.h"
 #include "fishing_game_ability_effects.h"
 #include "fishing_game_species_behavior.h"
@@ -50,7 +51,9 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 
-
+void Task_Fishing(u8 taskId);
+void AlignFishingAnimationFrames(void);
+void ResetPlayerAvatar(u16 gfxId);
 static void Task_UnableToUseOW(u8 taskId);
 static void LoadFishingSpritesheets(void);
 static void CreateMinigameSprites(u8 taskId);

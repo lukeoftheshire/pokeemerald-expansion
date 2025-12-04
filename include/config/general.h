@@ -87,3 +87,6 @@
 #define AUTO_LOWERCASE_KEYBOARD      GEN_LATEST  // Starting in GEN_6, after entering the first uppercase character, the keyboard switches to lowercase letters.
 
 #endif // GUARD_CONFIG_GENERAL_H
+
+// Config to toggle using the new shop menu.
+#define MUDSKIP_SHOP_UI TRUE
