@@ -60,6 +60,9 @@ EWRAM_DATA struct BattleMsgData *gBattleMsgDataPtr = NULL;
 // todo: make some of those names less vague: attacker/target vs pkmn, etc.
 
 static const u8 sText_EmptyString4[] = _("");
+static const u8 sText_CommaHolding[] = _(", holding ");
+static const u8 sText_An[] = _("an ");
+static const u8 sText_A[] = _("a ");
 
 const u8 gText_PkmnShroudedInMist[] = _("{B_ATK_TEAM1} team became shrouded in mist!");
 const u8 gText_PkmnGettingPumped[] = _("{B_DEF_NAME_WITH_PREFIX} is getting pumped!");
@@ -79,9 +82,9 @@ static const u8 sText_WildFled[] = _("{PLAY_SE SE_FLEE}{B_LINK_OPPONENT1_NAME} f
 static const u8 sText_TwoWildFled[] = _("{PLAY_SE SE_FLEE}{B_LINK_OPPONENT1_NAME} and {B_LINK_OPPONENT2_NAME} fled!"); //not in gen 5+, replaced with match was forfeited text
 static const u8 sText_PlayerDefeatedLinkTrainerTrainer1[] = _("You defeated {B_TRAINER1_NAME_WITH_CLASS}!\p");
 static const u8 sText_OpponentMon1Appeared[] = _("{B_OPPONENT_MON1_NAME} appeared!\p");
-static const u8 sText_WildPkmnAppeared[] = _("You encountered a wild {B_OPPONENT_MON1_NAME}!\p");
-static const u8 sText_LegendaryPkmnAppeared[] = _("You encountered a wild {B_OPPONENT_MON1_NAME}!\p");
-static const u8 sText_WildPkmnAppearedPause[] = _("You encountered a wild {B_OPPONENT_MON1_NAME}!{PAUSE 127}");
+static const u8 sText_WildPkmnAppeared[] = _("You encountered a wild {B_DEF_NATURE_NAME} {B_OPPONENT_MON1_NAME}{B_OPPONENT_HOLDING_ITEM}!\p");
+static const u8 sText_LegendaryPkmnAppeared[] = _("You encountered a wild {B_DEF_NATURE_NAME} {B_OPPONENT_MON1_NAME}!\p");
+static const u8 sText_WildPkmnAppearedPause[] = _("You encountered a wild {B_DEF_NATURE_NAME} {B_OPPONENT_MON1_NAME}{B_OPPONENT_HOLDING_ITEM}!{PAUSE 127}");
 static const u8 sText_TwoWildPkmnAppeared[] = _("Oh! A wild {B_OPPONENT_MON1_NAME} and {B_OPPONENT_MON2_NAME} appeared!\p");
 static const u8 sText_Trainer1WantsToBattle[] = _("You are challenged by {B_TRAINER1_NAME_WITH_CLASS}!\p");
 static const u8 sText_LinkTrainerWantsToBattle[] = _("You are challenged by {B_LINK_OPPONENT1_NAME}!");
@@ -3170,6 +3173,32 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                 break;
             case B_TXT_SCR_ACTIVE_NAME_WITH_PREFIX2:
                 HANDLE_NICKNAME_STRING_LOWERCASE(gBattleScripting.battler)
+                break;
+            case B_TXT_DEF_NATURE_NAME:
+                toCpy = gNaturesInfo[GetNature(GetBattlerMon(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT)))].name;
+                break;
+            case B_TXT_OPPONENT_HOLDING_ITEM:
+                u16 heldItem = GetMonData(GetBattlerMon(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT)), MON_DATA_HELD_ITEM);;
+
+                // Case 1: No item, return empty string
+                if (heldItem == ITEM_NONE)
+                    gBattleTextBuff3[0] = EOS;   // empty string
+                else
+                {
+                    // Case 2: Has an item → ", holding a <item>"
+                    StringCopy(gBattleTextBuff3, sText_CommaHolding);
+                    const u8 *itemName = gItemsInfo[heldItem].name;
+
+                    // Check vowel sound
+                    if (itemName[0] == 'A' || itemName[0] == 'E' || itemName[0] == 'I' ||
+                        itemName[0] == 'O' || itemName[0] == 'U')
+                        StringAppend(gBattleTextBuff3, sText_An);
+                    else
+                        StringAppend(gBattleTextBuff3, sText_A);
+                    StringAppend(gBattleTextBuff3, itemName);
+                }
+
+                toCpy = gBattleTextBuff3;
                 break;
             }
 
