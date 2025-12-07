@@ -3175,13 +3175,20 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                 HANDLE_NICKNAME_STRING_LOWERCASE(gBattleScripting.battler)
                 break;
             case B_TXT_DEF_NATURE_NAME:
+                if (!FlagGet(FLAG_CAN_SEE_WILD_NATURE))
+                {
+                 gBattleTextBuff3[0] = EOS;
+                 toCpy = gBattleTextBuff3;
+                 break;
+                }
+
                 toCpy = gNaturesInfo[GetNature(GetBattlerMon(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT)))].name;
                 break;
             case B_TXT_OPPONENT_HOLDING_ITEM:
                 u16 heldItem = GetMonData(GetBattlerMon(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT)), MON_DATA_HELD_ITEM);;
 
                 // Case 1: No item, return empty string
-                if (heldItem == ITEM_NONE)
+                if (heldItem == ITEM_NONE || !FlagGet(FLAG_CAN_SEE_WILD_ITEM))
                     gBattleTextBuff3[0] = EOS;   // empty string
                 else
                 {

@@ -1641,6 +1641,16 @@
 
 #define FLAGS_COUNT (DAILY_FLAGS_END + 1)
 
+// Include custom flags
+#include "constants/custom_flags.h"
+
+// Update FLAGS_COUNT to include custom flags
+#undef FLAGS_COUNT
+#define FLAGS_COUNT (CUSTOM_FLAGS_END + 1)
+
+// Special Flags (Stored in EWRAM (sSpecialFlags), not in the SaveBlock)
+#define SPECIAL_FLAGS_START                     0x4000
+
 // Special Flags (Stored in EWRAM (sSpecialFlags), not in the SaveBlock)
 #define SPECIAL_FLAGS_START                     0x4000
 #define FLAG_HIDE_MAP_NAME_POPUP                (SPECIAL_FLAGS_START + 0x0)
