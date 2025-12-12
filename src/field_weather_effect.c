@@ -15,6 +15,8 @@
 #include "trig.h"
 #include "gpu_regs.h"
 #include "palette.h"
+#include "map_preview_screen.h"
+#include "constants/expansion.h"
 
 EWRAM_DATA static u8 sCurrentAbnormalWeather = 0;
 
