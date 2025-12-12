@@ -20,6 +20,7 @@
 #include "constants/songs.h"
 #include "constants/map_types.h"
 #include "constants/rgb.h"
+#include "field_move.h"
 
 struct FlashStruct
 {
@@ -87,7 +88,9 @@ bool32 SetUpFieldMove_Flash(void)
         gPostMenuFieldCallback = SetUpPuzzleEffectRegisteel;
         return TRUE;
     }
-    else if (gMapHeader.cave == TRUE && !FlagGet(FLAG_SYS_USE_FLASH))
+    
+    // We add our new CanUseFlash() check to the original logic
+    else if (gMapHeader.cave == TRUE && !FlagGet(FLAG_SYS_USE_FLASH) && CanUseFlash() == TRUE)
     {
         gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
         gPostMenuFieldCallback = FieldCallback_Flash;
