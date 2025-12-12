@@ -20,11 +20,16 @@ EWRAM_DATA static u8 sCurrentAbnormalWeather = 0;
 
 const u16 gCloudsWeatherPalette[] = INCBIN_U16("graphics/weather/cloud.gbapal");
 const u16 gSandstormWeatherPalette[] = INCBIN_U16("graphics/weather/sandstorm.gbapal");
+const u16 gLeavesWeatherPalette[]    = INCBIN_U16("graphics/weather/leaves.gbapal");
 const u8 gWeatherFogDiagonalTiles[] = INCBIN_U8("graphics/weather/fog_diagonal.4bpp");
 const u8 gWeatherFogHorizontalTiles[] = INCBIN_U8("graphics/weather/fog_horizontal.4bpp");
 const u8 gWeatherCloudTiles[] = INCBIN_U8("graphics/weather/cloud.4bpp");
 const u8 gWeatherSnow1Tiles[] = INCBIN_U8("graphics/weather/snow0.4bpp");
 const u8 gWeatherSnow2Tiles[] = INCBIN_U8("graphics/weather/snow1.4bpp");
+const u8 gWeatherLeaves1Tiles[] = INCBIN_U8("graphics/weather/leaf_small.4bpp");
+const u8 gWeatherLeaves2Tiles[] = INCBIN_U8("graphics/weather/leaf_med.4bpp");
+const u8 gWeatherLeaves3Tiles[] = INCBIN_U8("graphics/weather/leaf_orange.4bpp");
+const u8 gWeatherLeaves4Tiles[] = INCBIN_U8("graphics/weather/leaf_red.4bpp");
 const u8 gWeatherBubbleTiles[] = INCBIN_U8("graphics/weather/bubble.4bpp");
 const u8 gWeatherAshTiles[] = INCBIN_U8("graphics/weather/ash.4bpp");
 const u8 gWeatherRainTiles[] = INCBIN_U8("graphics/weather/rain.4bpp");
@@ -889,7 +894,7 @@ static const union AnimCmd *const sSnowflakeAnimCmds[] =
 static const struct SpriteTemplate sSnowflakeSpriteTemplate =
 {
     .tileTag = TAG_NONE,
-    .paletteTag = PALTAG_WEATHER,
+    .paletteTag = PALTAG_WEATHER_2,
     .oam = &sSnowflakeSpriteOamData,
     .anims = sSnowflakeAnimCmds,
     .images = sSnowflakeSpriteImages,
@@ -942,7 +947,7 @@ static void InitSnowflakeSpriteMovement(struct Sprite *sprite)
     rand = Random();
     sprite->tDeltaY = (rand & 3) * 5 + 64;
     sprite->tDeltaY2 = sprite->tDeltaY;
-    StartSpriteAnim(sprite, (rand & 1) ? 0 : 1);
+    StartSpriteAnim(sprite,  (rand & 1) ? 0 : 1);
     sprite->tWaveIndex = 0;
     sprite->tWaveDelta = ((rand & 3) == 0) ? 2 : 1;
     sprite->tFallDuration = (rand & 0x1F) + 210;
@@ -1946,6 +1951,251 @@ static void UpdateFogDiagonalSprite(struct Sprite *sprite)
 #undef tSpriteColumn
 #undef tSpriteRow
 
+
+//------------------------------------------------------------------------------
+// Leaves
+//------------------------------------------------------------------------------
+
+static void UpdateLeafSprite(struct Sprite *);
+static bool8 UpdateVisibleLeafSprites(void);
+static bool8 CreateLeafSprite(void);
+static bool8 DestroyLeafSprite(void);
+static void InitLeafSpriteMovement(struct Sprite *);
+
+void Leaves_InitVars(void)
+{
+    gWeatherPtr->initStep = 0;
+    gWeatherPtr->weatherGfxLoaded = FALSE;
+    gWeatherPtr->targetColorMapIndex = 0;
+    gWeatherPtr->colorMapStepDelay = 20;
+    gWeatherPtr->targetLeafSpriteCount = NUM_LEAF_SPRITES;
+    gWeatherPtr->leafVisibleCounter = 0;
+    Weather_SetBlendCoeffs(8, BASE_SHADOW_INTENSITY); // preserve shadow darkness
+    gWeatherPtr->noShadows = FALSE;
+    LoadCustomWeatherSpritePalette(gLeavesWeatherPalette);
+}
+
+void Leaves_InitAll(void)
+{
+    u16 i;
+
+    Leaves_InitVars();
+    while (gWeatherPtr->weatherGfxLoaded == FALSE)
+    {
+        Leaves_Main();
+        for (i = 0; i < gWeatherPtr->leafSpriteCount; i++)
+            UpdateLeafSprite(gWeatherPtr->sprites.s1.leafSprites[i]);
+    }
+}
+
+void Leaves_Main(void)
+{
+    if (gWeatherPtr->initStep == 0 && !UpdateVisibleLeafSprites())
+    {
+        gWeatherPtr->weatherGfxLoaded = TRUE;
+        gWeatherPtr->initStep++;
+    }
+}
+
+bool8 Leaves_Finish(void)
+{
+    switch (gWeatherPtr->finishStep)
+    {
+    case 0:
+        gWeatherPtr->targetLeafSpriteCount = 0;
+        gWeatherPtr->leafVisibleCounter = 0;
+        gWeatherPtr->finishStep++;
+        // fall through
+    case 1:
+        if (!UpdateVisibleLeafSprites())
+        {
+            gWeatherPtr->finishStep++;
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool8 UpdateVisibleLeafSprites(void)
+{
+    if (gWeatherPtr->leafSpriteCount == gWeatherPtr->targetLeafSpriteCount)
+        return FALSE;
+
+    if (++gWeatherPtr->leafVisibleCounter > 36)
+    {
+        gWeatherPtr->leafVisibleCounter = 0;
+        if (gWeatherPtr->leafSpriteCount < gWeatherPtr->targetLeafSpriteCount)
+            CreateLeafSprite();
+        else
+            DestroyLeafSprite();
+    }
+
+    return gWeatherPtr->leafSpriteCount != gWeatherPtr->targetLeafSpriteCount;
+}
+
+static const struct OamData sLeafSpriteOamData =
+{
+    .y = 0,
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .mosaic = FALSE,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(8x8),
+    .x = 0,
+    .matrixNum = 0,
+    .size = SPRITE_SIZE(8x8),
+    .tileNum = 0,
+    .priority = 1,
+    .paletteNum = 0,
+    .affineParam = 0,
+};
+
+static const struct SpriteFrameImage sLeafSpriteImages[] =
+{
+    {gWeatherLeaves1Tiles, sizeof(gWeatherLeaves1Tiles)},
+    {gWeatherLeaves2Tiles, sizeof(gWeatherLeaves2Tiles)},
+    {gWeatherLeaves3Tiles, sizeof(gWeatherLeaves3Tiles)},
+    {gWeatherLeaves4Tiles, sizeof(gWeatherLeaves4Tiles)},
+};
+
+static const union AnimCmd sLeafAnimCmd0[] =
+{
+    ANIMCMD_FRAME(0, 16),
+    ANIMCMD_END,
+};
+
+static const union AnimCmd sLeafAnimCmd1[] =
+{
+    ANIMCMD_FRAME(1, 16),
+    ANIMCMD_END,
+};
+
+static const union AnimCmd sLeafAnimCmd2[] =
+{
+    ANIMCMD_FRAME(2, 16),
+    ANIMCMD_END,
+};
+
+static const union AnimCmd sLeafAnimCmd3[] =
+{
+    ANIMCMD_FRAME(3, 16),
+    ANIMCMD_END,
+};
+
+static const union AnimCmd *const sLeafAnimCmds[] =
+{
+    sLeafAnimCmd0,
+    sLeafAnimCmd1,
+    sLeafAnimCmd2,
+    sLeafAnimCmd3,
+};
+
+static const struct SpriteTemplate sLeafSpriteTemplate =
+{
+    .tileTag = TAG_NONE,
+    .paletteTag = PALTAG_WEATHER_2,
+    .oam = &sLeafSpriteOamData,
+    .anims = sLeafAnimCmds,
+    .images = sLeafSpriteImages,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = UpdateLeafSprite,
+};
+
+#define tPosY         data[0]
+#define tDeltaY       data[1]
+#define tWaveDelta    data[2]
+#define tWaveIndex    data[3]
+#define tLeafId  data[4]
+#define tFallCounter  data[5]
+#define tFallDuration data[6]
+#define tDeltaY2      data[7]
+
+static bool8 CreateLeafSprite(void)
+{
+    u8 spriteId = CreateSpriteAtEnd(&sLeafSpriteTemplate, 0, 0, 78);
+    if (spriteId == MAX_SPRITES)
+        return FALSE;
+
+    gSprites[spriteId].tLeafId = gWeatherPtr->leafSpriteCount;
+    InitLeafSpriteMovement(&gSprites[spriteId]);
+    gSprites[spriteId].coordOffsetEnabled = TRUE;
+    gWeatherPtr->sprites.s1.leafSprites[gWeatherPtr->leafSpriteCount++] = &gSprites[spriteId];
+    return TRUE;
+}
+
+static bool8 DestroyLeafSprite(void)
+{
+    if (gWeatherPtr->leafSpriteCount)
+    {
+        DestroySprite(gWeatherPtr->sprites.s1.leafSprites[--gWeatherPtr->leafSpriteCount]);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static void InitLeafSpriteMovement(struct Sprite *sprite)
+{
+    u16 rand;
+    u16 x = ((sprite->tLeafId * 5) & 7) * 30 + (Random() % 30);
+
+    sprite->y = -3 - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
+    sprite->x = x - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+    sprite->tPosY = sprite->y * 128;
+    sprite->x2 = 0;
+    rand = Random();
+    sprite->tDeltaY = (rand & 3) * 5 + 64;
+    sprite->tDeltaY2 = sprite->tDeltaY;
+    StartSpriteAnim(sprite, (rand & 3));
+    sprite->tWaveIndex = 0;
+    sprite->tWaveDelta = ((rand & 3) == 0) ? 2 : 1;
+    sprite->tFallDuration = (rand & 0x1F) + 210;
+    sprite->tFallCounter = 0;
+}
+
+static void UNUSED WaitLeafSprite(struct Sprite *sprite)
+{
+    if (++gWeatherPtr->leafTimer > 18)
+    {
+        sprite->invisible = FALSE;
+        sprite->callback = UpdateLeafSprite;
+        sprite->y = 250 - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
+        sprite->tPosY = sprite->y * 128;
+        gWeatherPtr->leafTimer = 0;
+    }
+}
+
+static void UpdateLeafSprite(struct Sprite *sprite)
+{
+    s16 x;
+
+    sprite->tPosY += sprite->tDeltaY;
+    sprite->y = sprite->tPosY >> 7;
+    sprite->tWaveIndex += sprite->tWaveDelta;
+    sprite->tWaveIndex &= 0xFF;
+    sprite->x2 = gSineTable[sprite->tWaveIndex] / 64;
+
+    x = (sprite->x + sprite->centerToCornerVecX + gSpriteCoordOffsetX) & 0x1FF;
+    if (x & 0x100)
+        x |= -0x100;
+
+
+    if (x < -3)
+        sprite->x = 242 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+    else if (x > 242)
+        sprite->x = -3 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+}
+
+#undef tPosY
+#undef tDeltaY
+#undef tWaveDelta
+#undef tWaveIndex
+#undef tLeafId
+#undef tFallCounter
+#undef tFallDuration
+#undef tDeltaY2
 //------------------------------------------------------------------------------
 // WEATHER_SANDSTORM
 //------------------------------------------------------------------------------
@@ -2524,6 +2774,9 @@ static void CreateAbnormalWeatherTask(void)
 static u8 TranslateWeatherNum(u8);
 static void UpdateRainCounter(u8, u8);
 
+
+
+
 void SetSavedWeather(u32 weather)
 {
     u8 oldWeather = gSaveBlock1Ptr->weather;
@@ -2619,6 +2872,7 @@ static u8 TranslateWeatherNum(u8 weather)
     case WEATHER_SUNNY:              return WEATHER_SUNNY;
     case WEATHER_RAIN:               return WEATHER_RAIN;
     case WEATHER_SNOW:               return WEATHER_SNOW;
+    case WEATHER_LEAVES:             return WEATHER_LEAVES;
     case WEATHER_RAIN_THUNDERSTORM:  return WEATHER_RAIN_THUNDERSTORM;
     case WEATHER_FOG_HORIZONTAL:     return WEATHER_FOG_HORIZONTAL;
     case WEATHER_VOLCANIC_ASH:       return WEATHER_VOLCANIC_ASH;

@@ -1540,7 +1540,7 @@ static void DebugAction_Util_Weather_SelectId(u8 taskId)
 
     if (JOY_NEW(A_BUTTON))
     {
-        if (gTasks[taskId].tInput <= 14 || gTasks[taskId].tInput >= 20)
+        if (gTasks[taskId].tInput < WEATHER_COUNT)
         {
             gTasks[taskId].data[5] = gTasks[taskId].tInput;
             SetWeather(gTasks[taskId].data[5]);

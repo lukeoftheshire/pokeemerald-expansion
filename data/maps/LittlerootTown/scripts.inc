@@ -393,6 +393,8 @@ LittlerootTown_EventScript_GoSaveBirchTrigger::
 
 LittlerootTown_EventScript_TownSign::
 	msgbox LittlerootTown_Text_TownSign, MSGBOX_SIGN
+    setweather WEATHER_LEAVES
+    doweather
 	end
 
 LittlerootTown_EventScript_BirchsLabSign::

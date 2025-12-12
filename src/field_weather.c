@@ -131,6 +131,7 @@ static const struct WeatherCallbacks sWeatherFuncs[] =
     [WEATHER_SUNNY]              = {Sunny_InitVars,         Sunny_Main,         Sunny_InitAll,         Sunny_Finish},
     [WEATHER_RAIN]               = {Rain_InitVars,          Rain_Main,          Rain_InitAll,          Rain_Finish},
     [WEATHER_SNOW]               = {Snow_InitVars,          Snow_Main,          Snow_InitAll,          Snow_Finish},
+    [WEATHER_LEAVES]             = {Leaves_InitVars,        Leaves_Main,        Leaves_InitAll,        Leaves_Finish},
     [WEATHER_RAIN_THUNDERSTORM]  = {Thunderstorm_InitVars,  Thunderstorm_Main,  Thunderstorm_InitAll,  Thunderstorm_Finish},
     [WEATHER_FOG_HORIZONTAL]     = {FogHorizontal_InitVars, FogHorizontal_Main, FogHorizontal_InitAll, FogHorizontal_Finish},
     [WEATHER_VOLCANIC_ASH]       = {Ash_InitVars,           Ash_Main,           Ash_InitAll,           Ash_Finish},
@@ -208,6 +209,7 @@ void StartWeather(void)
         gWeatherPtr->curRainSpriteIndex = 0;
         gWeatherPtr->cloudSpritesCreated = 0;
         gWeatherPtr->snowflakeSpriteCount = 0;
+        gWeatherPtr->leafSpriteCount = 0;
         gWeatherPtr->ashSpritesCreated = 0;
         gWeatherPtr->fogHSpritesCreated = 0;
         gWeatherPtr->fogDSpritesCreated = 0;
@@ -386,6 +388,7 @@ static void FadeInScreenWithWeather(void)
         }
         break;
     case WEATHER_SNOW:
+    case WEATHER_LEAVES:
     case WEATHER_VOLCANIC_ASH:
     case WEATHER_SANDSTORM:
     case WEATHER_FOG_DIAGONAL:
@@ -1065,6 +1068,9 @@ static void UNUSED SetFieldWeather(u8 weather)
     case COORD_EVENT_WEATHER_SNOW:
         SetWeather(WEATHER_SNOW);
         break;
+    case COORD_EVENT_WEATHER_LEAVES:
+        SetWeather(WEATHER_LEAVES);
+        break;
     case COORD_EVENT_WEATHER_RAIN_THUNDERSTORM:
         SetWeather(WEATHER_RAIN_THUNDERSTORM);
         break;
@@ -1207,6 +1213,7 @@ static const u8 sWeatherNames[WEATHER_COUNT][24] = {
     [WEATHER_ROUTE119_CYCLE]     = _("ROUTE119 CYCLE"),
     [WEATHER_ROUTE123_CYCLE]     = _("ROUTE123 CYCLE"),
     [WEATHER_FOG]                = _("FOG"),
+    [WEATHER_LEAVES]             = _("FALLING LEAVES"),
 };
 
 static const u8 sDebugText_WeatherNotDefined[] = _("NOT DEFINED!!!");

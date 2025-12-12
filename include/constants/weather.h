@@ -5,7 +5,7 @@
 #define WEATHER_SUNNY_CLOUDS            1
 #define WEATHER_SUNNY                   2
 #define WEATHER_RAIN                    3
-#define WEATHER_SNOW                    4   // Unused
+#define WEATHER_SNOW                    23   // Unused
 #define WEATHER_RAIN_THUNDERSTORM       5
 #define WEATHER_FOG_HORIZONTAL          6
 #define WEATHER_VOLCANIC_ASH            7
@@ -20,7 +20,8 @@
 #define WEATHER_ROUTE119_CYCLE          20
 #define WEATHER_ROUTE123_CYCLE          21
 #define WEATHER_FOG                     22  // Aggregate of WEATHER_FOG_HORIZONTAL and WEATHER_FOG_DIAGONAL 
-#define WEATHER_COUNT                   23
+#define WEATHER_LEAVES                  4  // Falling Leaves
+#define WEATHER_COUNT                   24
 
 // These are used in maps' coord_weather_event entries.
 // They are not a one-to-one mapping with the engine's
@@ -28,7 +29,7 @@
 #define COORD_EVENT_WEATHER_SUNNY_CLOUDS        1
 #define COORD_EVENT_WEATHER_SUNNY               2
 #define COORD_EVENT_WEATHER_RAIN                3
-#define COORD_EVENT_WEATHER_SNOW                4
+#define COORD_EVENT_WEATHER_SNOW                22
 #define COORD_EVENT_WEATHER_RAIN_THUNDERSTORM   5
 #define COORD_EVENT_WEATHER_FOG_HORIZONTAL      6
 #define COORD_EVENT_WEATHER_FOG_DIAGONAL        7
@@ -38,6 +39,7 @@
 #define COORD_EVENT_WEATHER_DROUGHT             11
 #define COORD_EVENT_WEATHER_ROUTE119_CYCLE      20
 #define COORD_EVENT_WEATHER_ROUTE123_CYCLE      21
+#define COORD_EVENT_WEATHER_LEAVES           4
 
 // These are the "abnormal weather events" that are used
 // to find Kyogre and Groudon.
