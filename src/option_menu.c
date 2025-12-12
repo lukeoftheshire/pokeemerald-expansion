@@ -93,7 +93,7 @@ static u8 FrameType_ProcessInput(u8 selection);
 static void FrameType_DrawChoices(u8 selection);
 static u8 ButtonMode_ProcessInput(u8 selection);
 static void ButtonMode_DrawChoices(u8 selection);
-static void DrawHeaderText(void);
+//static void DrawHeaderText(void);
 static u8 BattleMode_ProcessInput(u8 selection);
 static void BattleMode_DrawChoices(u8 selection);
 static void DrawTextOption(void);
@@ -122,7 +122,7 @@ static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
 
 static const u8 *const sOptionMenuItemsNames_Pg2[MENUITEM_COUNT_PG2] =
 {
-    [MENUITEM_FOLLOWER]        = gText_Follower,
+    [MENUITEM_FOLLOWER]        = gText_Followers,
     [MENUITEM_BATTLEMODE]      = gText_BattleMode,
     [MENUITEM_CANCEL_PG2]      = gText_OptionMenuCancel,
 };
