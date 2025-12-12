@@ -261,7 +261,7 @@ static const struct MapPreviewScreen sMapPreviewScreenData[MPS_COUNT] = {
         .mapsec = MAPSEC_PETALBURG_WOODS,
         .type = MPS_TYPE_BASIC,
         .flagId = MPS_FLAG_NULL,
-        .image = IMG_MT_MOON
+        .image = IMG_VIRIDIAN_FOREST
     }
 };
 
