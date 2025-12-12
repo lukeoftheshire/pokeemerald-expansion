@@ -57,3 +57,6 @@ tools/compresSmol/compresSmolTilemap
 *.fastSmol
 *.smolTM
 __pycache__
+notes/
+tools/poryscript/poryscript
+data/maps/**/scripts.inc
