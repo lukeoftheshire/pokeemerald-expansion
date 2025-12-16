@@ -45,6 +45,7 @@
 #include "mystery_gift.h"
 #include "union_room_chat.h"
 #include "constants/map_groups.h"
+#include "quests.h"
 #include "constants/items.h"
 #include "difficulty.h"
 #include "follower_npc.h"
@@ -216,6 +217,8 @@ void NewGameInitData(void)
     ResetDexNav();
     ClearFollowerNPCData();
     gSaveBlock3Ptr->followerIndex = OW_FOLLOWER_NOT_SET;
+    QuestMenu_ResetMenuSaveData();
+    QuestMenu_ResetMenuSaveData();
 }
 
 static void ResetMiniGamesRecords(void)
