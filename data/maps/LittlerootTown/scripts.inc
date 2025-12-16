@@ -2047,8 +2047,10 @@ LittlerootTown_Text_BirchSomethingToShowYouAtLab:
 # 1024 "data//maps/LittlerootTown/scripts.pory"
 LittlerootTown_Text_WhoAmIHowDidIGetHere:
 # 1025 "data//maps/LittlerootTown/scripts.pory"
-	.string "???: dick\p"
+	.string "The Volbeat around here are\n"
 # 1026 "data//maps/LittlerootTown/scripts.pory"
-	.string "OH GOD THE VOICES THE VOICES\n"
+	.string "so active at night!\p"
 # 1027 "data//maps/LittlerootTown/scripts.pory"
-	.string "HELP ME LOUIS HELP ME AAAAAAAAA$"
+	.string "They're harder to see at evening,\n"
+# 1028 "data//maps/LittlerootTown/scripts.pory"
+	.string "but they brighten up as time passes.$"

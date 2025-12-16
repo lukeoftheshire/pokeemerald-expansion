@@ -18,8 +18,10 @@ enum ColorMapType
 #define NUM_FOG_DIAGONAL_SPRITES     20
 #define NUM_SANDSTORM_SPRITES        20
 #define NUM_SWIRL_SANDSTORM_SPRITES  5
-#define NUM_SNOWFLAKE_SPRITES        25
-#define NUM_LEAF_SPRITES             25
+#define NUM_SNOWFLAKE_SPRITES        20
+#define NUM_LEAF_SPRITES             20
+#define NUM_FIREFLY_SPRITES          35
+#define FIREFLY_TIME_DELAY           59 //how long fireflies should be on-screen before/after nightfall in in-game minutes
 
 // Controls how the weather should be changing the screen palettes.
 #define WEATHER_PAL_STATE_CHANGING_WEATHER   0

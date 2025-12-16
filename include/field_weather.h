@@ -19,6 +19,13 @@ enum {
     PALTAG_WEATHER_2
 };
 
+typedef enum
+{
+    FIREFLY_ABSENT,
+    FIREFLY_PRESENT,
+    FIREFLY_ACTIVE,
+} FireflyState;
+
 #define NUM_WEATHER_COLOR_MAPS 19
 
 struct Weather
@@ -30,6 +37,7 @@ struct Weather
             struct Sprite *rainSprites[MAX_RAIN_SPRITES];
             struct Sprite *snowflakeSprites[101];
             struct Sprite *leafSprites[101];
+            struct Sprite *fireflySprites[101];
             struct Sprite *cloudSprites[NUM_CLOUD_SPRITES];
         } s1;
         struct
@@ -80,6 +88,12 @@ struct Weather
     u16 leafTimer;
     u8 leafSpriteCount;
     u8 targetLeafSpriteCount;
+    // Fireflies
+    u16 fireflyVisibleCounter;
+    u16 fireflyTimer;
+    u8 fireflySpriteCount;
+    u8 targetFireflySpriteCount;
+    FireflyState fireflyState;
     // Thunderstorm
     u16 thunderTimer;        // general-purpose timer for state transitions
     u16 thunderSETimer;      // timer for thunder sound effect
@@ -199,6 +213,10 @@ void Leaves_InitVars(void);
 void Leaves_Main(void);
 void Leaves_InitAll(void);
 bool8 Leaves_Finish(void);
+void Fireflies_InitVars(void);
+void Fireflies_Main(void);
+void Fireflies_InitAll(void);
+bool8 Fireflies_Finish(void);
 void Thunderstorm_InitVars(void);
 void Thunderstorm_Main(void);
 void Thunderstorm_InitAll(void);

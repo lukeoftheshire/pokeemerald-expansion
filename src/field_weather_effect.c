@@ -15,6 +15,7 @@
 #include "trig.h"
 #include "gpu_regs.h"
 #include "palette.h"
+#include "rtc.h"
 #include "map_preview_screen.h"
 #include "constants/expansion.h"
 
@@ -23,6 +24,7 @@ EWRAM_DATA static u8 sCurrentAbnormalWeather = 0;
 const u16 gCloudsWeatherPalette[] = INCBIN_U16("graphics/weather/cloud.gbapal");
 const u16 gSandstormWeatherPalette[] = INCBIN_U16("graphics/weather/sandstorm.gbapal");
 const u16 gLeavesWeatherPalette[]    = INCBIN_U16("graphics/weather/leaves.gbapal");
+const u16 gFireflyWeatherPalette[]    = INCBIN_U16("graphics/weather/fireflies.gbapal");
 const u8 gWeatherFogDiagonalTiles[] = INCBIN_U8("graphics/weather/fog_diagonal.4bpp");
 const u8 gWeatherFogHorizontalTiles[] = INCBIN_U8("graphics/weather/fog_horizontal.4bpp");
 const u8 gWeatherCloudTiles[] = INCBIN_U8("graphics/weather/cloud.4bpp");
@@ -36,6 +38,11 @@ const u8 gWeatherBubbleTiles[] = INCBIN_U8("graphics/weather/bubble.4bpp");
 const u8 gWeatherAshTiles[] = INCBIN_U8("graphics/weather/ash.4bpp");
 const u8 gWeatherRainTiles[] = INCBIN_U8("graphics/weather/rain.4bpp");
 const u8 gWeatherSandstormTiles[] = INCBIN_U8("graphics/weather/sandstorm.4bpp");
+const u8 gWeatherFireflies1Tiles[] = INCBIN_U8("graphics/weather/firefly_1.4bpp");
+const u8 gWeatherFireflies2Tiles[] = INCBIN_U8("graphics/weather/firefly_2.4bpp");
+const u8 gWeatherFireflies3Tiles[] = INCBIN_U8("graphics/weather/firefly_3.4bpp");
+const u8 gWeatherFireflies4Tiles[] = INCBIN_U8("graphics/weather/firefly_4.4bpp");
+const u8 gWeatherFirefliesAbsentTiles[] = INCBIN_U8("graphics/weather/firefly_empty.4bpp");
 
 //------------------------------------------------------------------------------
 // WEATHER_SUNNY_CLOUDS
@@ -2538,6 +2545,348 @@ bool8 Shade_Finish(void)
 {
     return FALSE;
 }
+//------------------------------------------------------------------------------
+// WEATHER_FIREFLIES
+//------------------------------------------------------------------------------
+
+
+//    u16 fireflyCounter;
+//    u16 fireflyTimer;
+//    u8 fireflySpriteCount;
+//    u8 targetFireflySpriteCount;
+//    enum fireflyState;
+static void UpdateFireflySprite(struct Sprite *);
+static bool8 UpdateVisibleFireflySprites(void);
+static bool8 CreateFireflySprite(void);
+static bool8 DestroyFireflySprite(void);
+static void InitFireflySpriteMovement(struct Sprite *);
+static FireflyState GetFireflyState(void);
+
+
+
+void Fireflies_InitVars(void)
+{
+    gWeatherPtr->initStep = 0;
+    gWeatherPtr->finishStep = 0;
+    gWeatherPtr->weatherGfxLoaded = FALSE;
+    gWeatherPtr->targetColorMapIndex = 0;
+    gWeatherPtr->colorMapStepDelay = 20;
+    gWeatherPtr->fireflySpriteCount = 0;
+    gWeatherPtr->targetFireflySpriteCount = 0;
+    gWeatherPtr->fireflyVisibleCounter = 0;
+    Weather_SetBlendCoeffs(10, BASE_SHADOW_INTENSITY); // preserve shadow darkness
+    gWeatherPtr->noShadows = FALSE;
+    LoadCustomWeatherSpritePalette(gFireflyWeatherPalette);
+}
+
+//Returns firefly state - active (night), present - 10 minutes before night and first 10 of morning, or absent(day)
+FireflyState GetFireflyState(void)
+{
+    s32 hours, minutes;
+    RtcCalcLocalTime();
+    hours = gLocalTime.hours;
+    minutes = gLocalTime.minutes;
+
+    if ((IsBetweenHours(hours, MORNING_HOUR_BEGIN, MORNING_HOUR_BEGIN+1) && (minutes<=FIREFLY_TIME_DELAY)) ||
+        (IsBetweenHours(hours, NIGHT_HOUR_BEGIN-1, NIGHT_HOUR_BEGIN) && (minutes>=(MINUTES_PER_HOUR - FIREFLY_TIME_DELAY)))) // night->morning
+    {
+        return FIREFLY_PRESENT;
+    }
+    else if (IsBetweenHours(hours, NIGHT_HOUR_BEGIN, NIGHT_HOUR_END)) // morning->day
+    {
+        return FIREFLY_ACTIVE;
+    }
+    return FIREFLY_ABSENT;
+}
+
+
+void Fireflies_InitAll(void)
+{
+    u16 i;
+    Fireflies_InitVars();
+    while (gWeatherPtr->weatherGfxLoaded == FALSE)
+        {
+            Fireflies_Main();
+            for (i = 0; i < gWeatherPtr->fireflySpriteCount; i++)
+                UpdateFireflySprite(gWeatherPtr->sprites.s1.fireflySprites[i]);
+        }
+
+}
+
+void Fireflies_Main(void)
+{
+    if (gWeatherPtr->initStep == 0 && !UpdateVisibleFireflySprites())
+    {
+        gWeatherPtr->weatherGfxLoaded = TRUE;
+        gWeatherPtr->initStep++;
+    }
+    else
+    {
+        // Keep maintaining target count as time/camera changes
+        UpdateVisibleFireflySprites();
+    }
+
+}
+
+bool8 Fireflies_Finish(void)
+{
+    switch (gWeatherPtr->finishStep)
+    {
+    case 0:
+        gWeatherPtr->targetFireflySpriteCount = 0;
+        gWeatherPtr->fireflyVisibleCounter = 0;
+        gWeatherPtr->finishStep++;
+        // fall through
+    case 1:
+        if (!UpdateVisibleFireflySprites())
+        {
+            gWeatherPtr->finishStep++;
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool8 UpdateVisibleFireflySprites(void)
+{
+    if (gWeatherPtr->finishStep == 0)  // only auto-target when not finishing
+    {
+        FireflyState state = GetFireflyState();
+        if (state == FIREFLY_ABSENT)
+            gWeatherPtr->targetFireflySpriteCount = 0;
+        else
+            gWeatherPtr->targetFireflySpriteCount = NUM_FIREFLY_SPRITES;
+    }
+
+    if (gWeatherPtr->fireflySpriteCount == gWeatherPtr->targetFireflySpriteCount)
+        return FALSE;
+
+    if (++gWeatherPtr->fireflyVisibleCounter > 36)
+    {
+        gWeatherPtr->fireflyVisibleCounter = 0;
+
+        if (gWeatherPtr->fireflySpriteCount < gWeatherPtr->targetFireflySpriteCount)
+            CreateFireflySprite();
+        else
+            DestroyFireflySprite();
+    }
+
+    return TRUE;
+}
+
+static const struct OamData sFireflySpriteOamData =
+{
+    .y = 0,
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_BLEND,
+    .mosaic = FALSE,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(8x8),
+    .x = 0,
+    .matrixNum = 0,
+    .size = SPRITE_SIZE(8x8),
+    .tileNum = 0,
+    .priority = 1,
+    .paletteNum = 2,
+    .affineParam = 0,
+};
+
+static const union AnimCmd sFireflyAnimCmdPresent[] =
+{
+    ANIMCMD_FRAME(3, 32),
+    ANIMCMD_FRAME(0, 8),
+    ANIMCMD_FRAME(2, 10),
+    ANIMCMD_FRAME(0, 8),
+    ANIMCMD_FRAME(3, 32),
+    ANIMCMD_JUMP(0),
+};
+
+static const union AnimCmd sFireflyAnimCmdActive[] =
+{
+    ANIMCMD_FRAME(3, 32),
+    ANIMCMD_FRAME(2, 8),
+    ANIMCMD_FRAME(0, 8),
+    ANIMCMD_FRAME(1, 12),
+    ANIMCMD_FRAME(0, 8),
+    ANIMCMD_FRAME(2, 8),
+    ANIMCMD_JUMP(0),
+};
+
+static const union AnimCmd sFireflyAnimCmdActive2[] =
+{
+    ANIMCMD_FRAME(1, 14),
+    ANIMCMD_FRAME(0, 8),
+    ANIMCMD_FRAME(2, 6),
+    ANIMCMD_FRAME(3, 28),
+    ANIMCMD_FRAME(2, 6),
+    ANIMCMD_FRAME(0, 8),
+    ANIMCMD_JUMP(0),
+};
+
+static const union AnimCmd sFireflyAnimCmdActive3[] =
+{
+    ANIMCMD_FRAME(0, 8),
+    ANIMCMD_FRAME(1, 10),
+    ANIMCMD_FRAME(0, 4),
+    ANIMCMD_FRAME(1, 10),
+    ANIMCMD_FRAME(2, 8),
+    ANIMCMD_FRAME(3, 63),
+    ANIMCMD_FRAME(2, 8),
+    ANIMCMD_JUMP(0),
+};
+//UNUSED
+static const union AnimCmd sFireflyAnimCmdAbsent[] =
+{
+    ANIMCMD_FRAME(4, 16),
+    ANIMCMD_JUMP(0),
+};
+
+
+static const union AnimCmd *const sFireflyAnimCmds[] =
+{
+    sFireflyAnimCmdPresent,
+    sFireflyAnimCmdActive,
+    sFireflyAnimCmdActive2,
+    sFireflyAnimCmdActive3,
+    sFireflyAnimCmdAbsent
+};
+
+static const struct SpriteFrameImage sFireflySpriteImages[] =
+{
+    {gWeatherFireflies1Tiles, sizeof(gWeatherFireflies1Tiles)},
+    {gWeatherFireflies2Tiles, sizeof(gWeatherFireflies2Tiles)},
+    {gWeatherFireflies3Tiles, sizeof(gWeatherFireflies3Tiles)},
+    {gWeatherFireflies4Tiles, sizeof(gWeatherFireflies4Tiles)},
+    {gWeatherFirefliesAbsentTiles, sizeof(gWeatherFirefliesAbsentTiles)},
+};
+
+static const struct SpriteTemplate sFireflySpriteTemplate =
+{
+    .tileTag = TAG_NONE,
+    .paletteTag = PALTAG_WEATHER_2,
+    .oam = &sFireflySpriteOamData,
+    .anims = sFireflyAnimCmds,
+    .images = sFireflySpriteImages,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = UpdateFireflySprite,
+};
+
+
+
+
+
+#define tBaseY       data[0]
+#define tSineIndex  data[1]
+#define tSineSpeed  data[2]
+#define tLastState  data[3]
+#define tFireflyId  data[4]
+#define tFallCounter  data[5]
+#define tFallDuration data[6]
+#define tDeltaY2      data[7]
+
+static bool8 CreateFireflySprite(void)
+{
+    u8 spriteId = CreateSpriteAtEnd(&sFireflySpriteTemplate, 0, 0, 78);
+    if (spriteId == MAX_SPRITES || GetFireflyState() == FIREFLY_ABSENT)
+        return FALSE;
+
+    gSprites[spriteId].tFireflyId = gWeatherPtr->fireflySpriteCount;
+    InitFireflySpriteMovement(&gSprites[spriteId]);
+    gSprites[spriteId].coordOffsetEnabled = TRUE;
+    gWeatherPtr->sprites.s1.fireflySprites[gWeatherPtr->fireflySpriteCount++] = &gSprites[spriteId];
+    return TRUE;
+}
+
+static bool8 DestroyFireflySprite(void)
+{
+    if (gWeatherPtr->fireflySpriteCount)
+    {
+        DestroySprite(gWeatherPtr->sprites.s1.fireflySprites[--gWeatherPtr->fireflySpriteCount]);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static void InitFireflySpriteMovement(struct Sprite *sprite)
+{
+
+    u16 rand = Random();
+    u16 x = ((sprite->tFireflyId * 5) & 7) * 30 + (Random() % 30);
+
+    sprite->x = x - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+    sprite->y = (Random() % 160) - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
+    sprite->tBaseY = sprite->y;
+    sprite->tSineIndex = rand & 0xFF;
+    sprite->tSineSpeed = (rand % 3)+1;
+
+    sprite->x2 = 0;
+    sprite->y2 = 0;
+
+    sprite->tLastState = GetFireflyState();
+
+    StartSpriteAnim(sprite,
+        sprite->tLastState == FIREFLY_ACTIVE ? (rand % 3)+1 :
+        sprite->tLastState == FIREFLY_PRESENT ? 0 : 4);
+}
+
+
+static void UpdateFireflySprite(struct Sprite *sprite)
+{
+    // Hover: advance phase
+    sprite->tSineIndex = (sprite->tSineIndex + sprite->tSineSpeed) & 0xFF;
+
+    // Small vertical bob
+    sprite->y2 = gSineTable[sprite->tSineIndex] / 64;
+
+    // Small horizontal drift (optional)
+    sprite->x2 = gSineTable[(sprite->tSineIndex * 2) & 0xFF] / 128;
+
+    // Wrap X using base sprite->x
+    s16 x = (sprite->x + sprite->centerToCornerVecX + gSpriteCoordOffsetX) & 0x1FF;
+    if (x & 0x100)
+        x |= -0x100;
+
+    if (x < -3)
+        sprite->x = 242 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+    else if (x > 242)
+        sprite->x = -3 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+
+    s16 y = (sprite->y + sprite->centerToCornerVecY + gSpriteCoordOffsetY) & 0x1FF;
+    if (y & 0x100)
+        y |= -0x100;
+
+    if (y < -3)
+        sprite->y = 162 - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
+    else if (y > 162)
+        sprite->y = -3 - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
+
+    // State change anim switch
+    FireflyState state = GetFireflyState();
+    if (state != sprite->tLastState)
+    {
+        sprite->tLastState = state;
+        StartSpriteAnim(sprite,
+            state == FIREFLY_ACTIVE ? (Random() % 3)+1 :
+            state == FIREFLY_PRESENT ? 0 : 4);
+        sprite->animDelayCounter = (Random() % 20) + 10; //randomly delay on state change to prevent weird syncing of anims
+    }
+}
+
+
+
+#undef tBaseY
+#undef tSineIndex
+#undef tSineSpeed
+#undef tLastState
+#undef tFireflyId
+#undef tFallCounter
+#undef tFallDuration
+#undef tDeltaY2
+
+
 
 //------------------------------------------------------------------------------
 // WEATHER_UNDERWATER_BUBBLES
@@ -2886,6 +3235,7 @@ static u8 TranslateWeatherNum(u8 weather)
     case WEATHER_DOWNPOUR:           return WEATHER_DOWNPOUR;
     case WEATHER_UNDERWATER_BUBBLES: return WEATHER_UNDERWATER_BUBBLES;
     case WEATHER_ABNORMAL:           return WEATHER_ABNORMAL;
+    case WEATHER_FIREFLIES:          return WEATHER_FIREFLIES;
     case WEATHER_ROUTE119_CYCLE:     return sWeatherCycleRoute119[gSaveBlock1Ptr->weatherCycleStage];
     case WEATHER_ROUTE123_CYCLE:     return sWeatherCycleRoute123[gSaveBlock1Ptr->weatherCycleStage];
     default:                         return WEATHER_NONE;

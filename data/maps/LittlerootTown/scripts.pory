@@ -1022,8 +1022,9 @@ LittlerootTown_Text_BirchSomethingToShowYouAtLab:
 	.string "Let's go to my LAB.$"
 
 LittlerootTown_Text_WhoAmIHowDidIGetHere:
-	.string "???: dick\p"
-	.string "OH GOD THE VOICES THE VOICES\n"
-	.string "HELP ME LOUIS HELP ME AAAAAAAAA$"
+	.string "The Volbeat around here are\n"
+	.string "so active at night!\p"
+	.string "They're harder to see at evening,\n"
+	.string "but they brighten up as time passes.$"
 
 `
