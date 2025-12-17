@@ -57,6 +57,7 @@
 #include "constants/union_room.h"
 #include "constants/weather.h"
 #include "constants/layouts.h"
+#include "quests.h"
 
 #define SPECIAL_LOCALIDS_START (min(LOCALID_CAMERA, \
                                 min(LOCALID_PLAYER, \
@@ -1769,6 +1770,8 @@ u8 TrySpawnObjectEventTemplate(const struct ObjectEventTemplate *objectEventTemp
     if (subspriteTables)
         SetSubspriteTables(&gSprites[gObjectEvents[objectEventId].spriteId], subspriteTables);
 
+     HandleQuestIconForSingleObjectEvent(&gObjectEvents[objectEventId], objectEventId); //questicons
+
     return objectEventId;
 }
 
@@ -2970,6 +2973,7 @@ static void SpawnObjectEventOnReturnToField(u8 objectEventId, s16 x, s16 y)
         ResetObjectEventFldEffData(objectEvent);
         SetObjectSubpriorityByElevation(objectEvent->previousElevation, sprite, 1);
     }
+    HandleQuestIconForSingleObjectEvent(objectEvent,objectEventId);
 }
 
 static void ResetObjectEventFldEffData(struct ObjectEvent *objectEvent)
@@ -2982,6 +2986,7 @@ static void ResetObjectEventFldEffData(struct ObjectEvent *objectEvent)
     objectEvent->inShallowFlowingWater = FALSE;
     objectEvent->inSandPile = FALSE;
     objectEvent->inHotSprings = FALSE;
+    ResetQuestIconOnObject(objectEvent);
     ObjectEventClearHeldMovement(objectEvent);
 }
 

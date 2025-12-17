@@ -78,6 +78,7 @@
 #include "constants/songs.h"
 #include "constants/trainer_hill.h"
 #include "constants/weather.h"
+#include "quests.h"
 
 STATIC_ASSERT((B_FLAG_FOLLOWERS_DISABLED == 0 || OW_FOLLOWERS_ENABLED), FollowersFlagAssignedWithoutEnablingThem);
 
@@ -1902,6 +1903,7 @@ void CB2_ReturnToField(void)
     }
     else
     {
+        RefreshQuestIcons();
         FieldClearVBlankHBlankCallbacks();
         SetMainCallback2(CB2_ReturnToFieldLocal);
     }
@@ -1943,6 +1945,7 @@ void CB2_ReturnToFieldWithOpenMenu(void)
 {
     FieldClearVBlankHBlankCallbacks();
     gFieldCallback2 = FieldCB_ReturnToFieldOpenStartMenu;
+    RefreshQuestIcons();
     CB2_ReturnToField();
 }
 
@@ -2441,6 +2444,7 @@ static void InitObjectEventsLink(void)
     ResetObjectEvents();
     TrySpawnObjectEvents(0, 0);
     TryRunOnWarpIntoMapScript();
+    RefreshQuestIcons();
 }
 
 static void InitObjectEventsLocal(void)
@@ -2467,6 +2471,7 @@ static void InitObjectEventsReturnToField(void)
     SpawnObjectEventsOnReturnToField(0, 0);
     RotatingGate_InitPuzzleAndGraphics();
     RunOnReturnToFieldMapScript();
+    RefreshQuestIcons();
 }
 
 static void SetCameraToTrackPlayer(void)
