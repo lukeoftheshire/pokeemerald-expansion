@@ -2392,7 +2392,7 @@ static void GenerateMenuContext(void)
 			break;
 		case SORT_INACTIVE:
 			questNamePointer = StringCopy(questNameArray[QUEST_ARRAY_COUNT],
-			                              sText_InactiveHeader);
+			                               sText_InactiveHeader);
 			break;
 		case SORT_ACTIVE:
 			questNamePointer = StringCopy(questNameArray[QUEST_ARRAY_COUNT],
