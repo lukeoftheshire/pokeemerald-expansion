@@ -98,6 +98,9 @@ LittlerootTown_EventScript_SetMomInFrontOfDoorMale::
 	setobjectxyperm LOCALID_LITTLEROOT_MOM, 5, 9
 	return
 
+Speaker_Jeremy:
+    .string "Jeremy$"
+
 LittlerootTown_EventScript_SetMomInFrontOfDoorFemale::
 	setobjectxyperm LOCALID_LITTLEROOT_MOM, 14, 9
 	return
@@ -243,20 +246,26 @@ LittlerootTown_EventScript_SetRivalBirchPosForDexUpgradeFemale::
 	end
 
 LittlerootTown_EventScript_FatMan::
+    createfieldmugshot MUGSHOT_TEST, EMOTE_NORMAL
 	msgbox LittlerootTown_Text_CanUsePCToStoreItems, MSGBOX_NPC
 	end
 
 LittlerootTown_EventScript_Boy::
+    createfieldmugshot MUGSHOT_TEST, EMOTE_NORMAL
 	msgbox LittlerootTown_Text_BirchSpendsDaysInLab, MSGBOX_NPC
 	end
 
 LittlerootTown_EventScript_Huh::
+    createfieldmugshot MUGSHOT_TEST, EMOTE_NORMAL
+    setspeaker Speaker_Jeremy
 	msgbox LittlerootTown_Text_WhoAmIHowDidIGetHere, MSGBOX_NPC
+	removefieldmugshot
 	end
 
 LittlerootTown_EventScript_Twin::
 	lock
 	faceplayer
+	createfieldmugshot MUGSHOT_TEST, EMOTE_NORMAL
 	goto_if_set FLAG_ADVENTURE_STARTED, LittlerootTown_EventScript_GoodLuck
 	goto_if_set FLAG_RESCUED_BIRCH, LittlerootTown_EventScript_YouSavedBirch
 	goto_if_ne VAR_LITTLEROOT_TOWN_STATE, 0, LittlerootTown_EventScript_GoSaveBirch
