@@ -1,6 +1,6 @@
 # Megaman Battle Network Style Names
 
-Prior to 1.10, names in expansion that were too long for the game's UIs were truncated to fit using the naming conventions from the [Megaman Battle Network](<https://www.therockmanexezone.com/wiki/The_Rockman_EXE_Zone_Wiki>) series.
+Prior to 1.10, names in expansion that were too long for the game's UIs were truncated to fit using the naming conventions from the [ Megaman Battle Network](<https://www.therockmanexezone.com/wiki/The_Rockman_EXE_Zone_Wiki>) series.
 
 These were removed as part of https://github.com/rh-hideout/pokeemerald-expansion/pull/5240. They are stored here for users that may want to refer back to them or restore them.
 

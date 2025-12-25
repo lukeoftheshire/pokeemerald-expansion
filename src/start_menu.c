@@ -52,6 +52,9 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 #include "ui_stat_editor.h"
+#include "decompress.h"
+#include "pokemon_icon.h"   // CreateMonIcon, LoadMonIconPalettes
+#include "pokemon.h"        // gPlayerParty, gPlayerPartyCount, GetMonData
 
 // Menu actions
 enum
@@ -83,6 +86,7 @@ enum
     SAVE_CANCELED,
     SAVE_ERROR
 };
+
 
 // IWRAM common
 COMMON_DATA bool8 (*gMenuCallback)(void) = NULL;

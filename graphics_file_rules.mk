@@ -245,6 +245,9 @@ $(FONTGFXDIR)/narrower.latfont: $(FONTGFXDIR)/latin_narrower.png
 $(FONTGFXDIR)/small_narrower.latfont: $(FONTGFXDIR)/latin_small_narrower.png
 	$(GFX) $< $@
 
+$(FONTGFXDIR)/small_narrowest.latfont: $(FONTGFXDIR)/latin_small_narrowest.png
+	$(GFX) $< $@
+
 $(FONTGFXDIR)/short_narrow.latfont: $(FONTGFXDIR)/latin_short_narrow.png
 	$(GFX) $< $@
 

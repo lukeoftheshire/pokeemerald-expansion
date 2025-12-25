@@ -77,6 +77,7 @@
 #include "rtc.h"
 #include "fake_rtc.h"
 #include "save.h"
+#include "start_menu_book.h"
 
 enum FollowerNPCCreateDebugMenu
 {
@@ -260,6 +261,7 @@ static void DebugAction_Util_Weather_SelectId(u8 taskId);
 static void DebugAction_Util_WatchCredits(u8 taskId);
 static void DebugAction_Util_CheatStart(u8 taskId);
 static void DebugAction_Util_Mining_Minigame(u8 taskId);
+static void DebugAction_Util_Start_Book(u8 taskId);
 
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
@@ -381,10 +383,12 @@ extern const u8 Debug_EventScript_EWRAMCounters[];
 extern const u8 Debug_Follower_NPC_Event_Script[];
 extern const u8 Debug_Follower_NPC_Not_Enabled[];
 extern const u8 Debug_EventScript_Mining_Minigame[];
+extern const u8 Debug_EventScript_Start_Book[];
 extern const u8 Debug_EventScript_Steven_Multi[];
 extern const u8 Debug_EventScript_PrintTimeOfDay[];
 extern const u8 Debug_EventScript_TellTheTime[];
 extern const u8 Debug_EventScript_FakeRTCNotEnabled[];
+extern void StartBookMenu(MainCallback);
 
 extern const u8 Debug_BerryPestsDisabled[];
 extern const u8 Debug_BerryWeedsDisabled[];
@@ -554,6 +558,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Follower NPC…"),     DebugAction_OpenSubMenu, sDebugMenu_Actions_FollowerNPCMenu },
     { COMPOUND_STRING("Mining Minigame"),   DebugAction_Util_Mining_Minigame},
     { COMPOUND_STRING("Steven Multi"),      DebugAction_ExecuteScript, Debug_EventScript_Steven_Multi },
+    { COMPOUND_STRING("Start Menu Book"),   DebugAction_Util_Start_Book},
     { NULL }
 };
 
@@ -1595,6 +1600,18 @@ static void DebugAction_Util_CheatStart(u8 taskId)
 static void DebugAction_Util_Mining_Minigame(u8 taskId)
 {
     Debug_DestroyMenu_Full_Script(taskId, Debug_EventScript_Mining_Minigame);
+}
+
+static void DebugAction_Util_Steven_Multi(u8 taskId)
+{
+    Debug_DestroyMenu_Full_Script(taskId, Debug_EventScript_Steven_Multi);
+}
+
+static void DebugAction_Util_Start_Book(u8 taskId)
+{
+    // This closes the debug menu and switches to your Book Callback
+    Debug_DestroyMenu_Full(taskId);
+    StartBookMenu(CB2_ReturnToField);
 }
 
 void BufferExpansionVersion(struct ScriptContext *ctx)
