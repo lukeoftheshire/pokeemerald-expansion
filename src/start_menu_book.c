@@ -51,6 +51,8 @@
 #include "pokemon.h"
 #include "pokemon_animation.h"
 #include "party_menu.h"
+#include "pokemon_summary_screen.h"
+#include "battle_main.h"
 
 
 
@@ -76,6 +78,8 @@ struct StartMenuResources
     u16 heldItemItemId; // last shown item, for quick no-op updates
     u8 heartSpriteId;
     u8 lastHeartFrame;  // 0xFF = unset
+    u8 hpBarSpriteIds[PARTY_SIZE];
+    u8 typeIconSpriteIds[2];
 };
 
 
@@ -92,10 +96,8 @@ enum WindowIds
 {
     WIN_LEFT_NAME,
     WIN_LEFT_MOVES_ALL,
-    WIN_LEFT_COUNT,
-    WIN_RIGHT_NAMES,
-    WIN_RIGHT_HP_BARS,
-    WIN_RIGHT_LVS
+    WIN_RIGHT_LVS,
+    WIN_LEFT_COUNT,  // sentinel - must stay last (DUMMY_WIN_TEMPLATE uses bg=0xFF to stop InitWindows)
 };
 
 enum StartMenuBoxes
@@ -140,6 +142,15 @@ static void CreateOrUpdateBookHeldItemIcon(u16 itemId);
 static void DestroyBookHeldItemIcon(void);
 static void CreateOrUpdateBookHeartIcon(u8 friendship);
 static void DestroyBookHeartIcon(void);
+static void CreatePartyHPBars(void);
+static void DestroyPartyHPBars(void);
+static void PrintPartyLevels(void);
+static void CreateOrUpdateTypeIcons(u16 species);
+static void DestroyTypeIconSprites(void);
+
+#define TYPE_ICON_X  98
+#define TYPE_ICON_Y1 124
+#define TYPE_ICON_Y2 140
 
 /// BG Configuration
 static const struct BgTemplate sBookBgTemplates[] =
@@ -196,6 +207,15 @@ static const struct WindowTemplate sBookWindows[] =
           .baseBlock = 1 + 20*6 + 13*3+14*3},
           // Calculate new baseblock size,
 
+    [WIN_RIGHT_LVS] = {
+        .bg = 0,
+        .tilemapLeft = 16,  // x = 152px, just left of left-column HP bars
+        .tilemapTop = 6,   // y = 88px, just above row-0 level text
+        .width = 12,
+        .height = 20,        // 72px, covers rows 0 and 1 (row 2 is off screen)
+        .paletteNum = 0,
+        .baseBlock = 286,   // after WIN_LEFT_MOVES_ALL (202 + 14*6 = 286)
+    },
     [WIN_LEFT_COUNT] = DUMMY_WIN_TEMPLATE,
 };
 
@@ -229,25 +249,23 @@ static const u8 sHeart50_Gfx[]   = INCBIN_U8("graphics/start_menu_book/heart_50.
 static const u8 sHeart75_Gfx[]   = INCBIN_U8("graphics/start_menu_book/heart_75.4bpp");
 static const u8 sHeart100_Gfx[]  = INCBIN_U8("graphics/start_menu_book/heart_100.4bpp");
 static const u8 sHeartPerf_Gfx[]  = INCBIN_U8("graphics/start_menu_book/heart_perf.4bpp");
+
+// HP bars (32x32, share cursor palette)
+static const u8 sHPBar0_Gfx[]   = INCBIN_U8("graphics/start_menu_book/hp0.4bpp");
+static const u8 sHPBar1_Gfx[]   = INCBIN_U8("graphics/start_menu_book/hp1.4bpp");
+static const u8 sHPBar10_Gfx[]  = INCBIN_U8("graphics/start_menu_book/hp10.4bpp");
+static const u8 sHPBar20_Gfx[]  = INCBIN_U8("graphics/start_menu_book/hp20.4bpp");
+static const u8 sHPBar30_Gfx[]  = INCBIN_U8("graphics/start_menu_book/hp30.4bpp");
+static const u8 sHPBar40_Gfx[]  = INCBIN_U8("graphics/start_menu_book/hp40.4bpp");
+static const u8 sHPBar50_Gfx[]  = INCBIN_U8("graphics/start_menu_book/hp50.4bpp");
+static const u8 sHPBar60_Gfx[]  = INCBIN_U8("graphics/start_menu_book/hp60.4bpp");
+static const u8 sHPBar70_Gfx[]  = INCBIN_U8("graphics/start_menu_book/hp70.4bpp");
+static const u8 sHPBar80_Gfx[]  = INCBIN_U8("graphics/start_menu_book/hp80.4bpp");
+static const u8 sHPBar90_Gfx[]  = INCBIN_U8("graphics/start_menu_book/hp90.4bpp");
+static const u8 sHPBar100_Gfx[] = INCBIN_U8("graphics/start_menu_book/hp100.4bpp");
 static const u8 sHeartPerf2_Gfx[] = INCBIN_U8("graphics/start_menu_book/heart_perf2.4bpp");
 static const u8 sHeartPerf3_Gfx[] = INCBIN_U8("graphics/start_menu_book/heart_perf3.4bpp");
 
-//HP Bar - todo
-/*
-static const u8 sHPBar_100_Percent_Gfx[]  = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_100_Percent_Gfx.4bpp");
-static const u8 sHPBar_90_Percent_Gfx[]   = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_90_Percent_Gfx.4bpp");
-static const u8 sHPBar_80_Percent_Gfx[]   = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_80_Percent_Gfx.4bpp");
-static const u8 sHPBar_70_Percent_Gfx[]   = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_70_Percent_Gfx.4bpp");
-static const u8 sHPBar_60_Percent_Gfx[]   = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_60_Percent_Gfx.4bpp");
-static const u8 sHPBar_50_Percent_Gfx[]   = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_50_Percent_Gfx.4bpp");
-static const u8 sHPBar_40_Percent_Gfx[]   = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_40_Percent_Gfx.4bpp");
-static const u8 sHPBar_30_Percent_Gfx[]   = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_30_Percent_Gfx.4bpp");
-static const u8 sHPBar_20_Percent_Gfx[]   = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_20_Percent_Gfx.4bpp");
-static const u8 sHPBar_10_Percent_Gfx[]   = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_10_Percent_Gfx.4bpp");
-static const u8 sHPBar_0_Percent_Gfx[]    = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_0_Percent_Gfx.4bpp");
-static const u16 sHP_Pal[] = INCBIN_U16("graphics/ui_startmenu_full/hpbar_pal.gbapal");
-static const u16 sHP_PalAlt[] = INCBIN_U16("graphics/ui_startmenu_full/hpbar_pal_alt.gbapal");
-*/
 
 //
 //  Sprite Data for Cursor, IconBox, GreyedBoxes, and Statuses
@@ -357,8 +375,63 @@ static const struct SpriteTemplate sSpriteTemplate_Heart =
     .callback = SpriteCallbackDummy,
 };
 
-#define HEART_CENTER_X 109
+#define HEART_CENTER_X 110
 #define HEART_CENTER_Y 64
+
+// HP bar sprite data (32x32, shares cursor palette)
+static const struct SpriteFrameImage sHPBarImages[] =
+{
+    { sHPBar0_Gfx,   512 },  //  0: fainted
+    { sHPBar1_Gfx,   512 },  //  1: <10%
+    { sHPBar10_Gfx,  512 },  //  2: >=10%
+    { sHPBar20_Gfx,  512 },  //  3: >=20%
+    { sHPBar30_Gfx,  512 },  //  4: >=30%
+    { sHPBar40_Gfx,  512 },  //  5: >=40%
+    { sHPBar50_Gfx,  512 },  //  6: >=50%
+    { sHPBar60_Gfx,  512 },  //  7: >=60%
+    { sHPBar70_Gfx,  512 },  //  8: >=70%
+    { sHPBar80_Gfx,  512 },  //  9: >=80%
+    { sHPBar90_Gfx,  512 },  // 10: >=90%
+    { sHPBar100_Gfx, 512 },  // 11: 100%
+};
+
+static const struct OamData sOamData_HPBar =
+{
+    .size = SPRITE_SIZE(32x32),
+    .shape = SPRITE_SHAPE(32x32),
+    .priority = 0,
+};
+
+static const union AnimCmd sHPBarAnim_0[]  = { ANIMCMD_FRAME(0,  1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHPBarAnim_1[]  = { ANIMCMD_FRAME(1,  1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHPBarAnim_2[]  = { ANIMCMD_FRAME(2,  1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHPBarAnim_3[]  = { ANIMCMD_FRAME(3,  1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHPBarAnim_4[]  = { ANIMCMD_FRAME(4,  1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHPBarAnim_5[]  = { ANIMCMD_FRAME(5,  1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHPBarAnim_6[]  = { ANIMCMD_FRAME(6,  1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHPBarAnim_7[]  = { ANIMCMD_FRAME(7,  1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHPBarAnim_8[]  = { ANIMCMD_FRAME(8,  1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHPBarAnim_9[]  = { ANIMCMD_FRAME(9,  1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHPBarAnim_10[] = { ANIMCMD_FRAME(10, 1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHPBarAnim_11[] = { ANIMCMD_FRAME(11, 1), ANIMCMD_JUMP(0) };
+
+static const union AnimCmd *const sHPBarAnimTable[] =
+{
+    sHPBarAnim_0,  sHPBarAnim_1,  sHPBarAnim_2,  sHPBarAnim_3,
+    sHPBarAnim_4,  sHPBarAnim_5,  sHPBarAnim_6,  sHPBarAnim_7,
+    sHPBarAnim_8,  sHPBarAnim_9,  sHPBarAnim_10, sHPBarAnim_11,
+};
+
+static const struct SpriteTemplate sSpriteTemplate_HPBar =
+{
+    .tileTag      = TAG_NONE,
+    .paletteTag   = TAG_CURSOR,
+    .oam          = &sOamData_HPBar,
+    .anims        = sHPBarAnimTable,
+    .images       = sHPBarImages,
+    .affineAnims  = gDummySpriteAffineAnimTable,
+    .callback     = SpriteCallbackDummy,
+};
 
 //
 //  Begin Sprite Loading Functions25
@@ -465,6 +538,10 @@ void StartBookMenu(MainCallback callback)
     sStartMenuDataPtr->heartSpriteId = SPRITE_NONE;
     sStartMenuDataPtr->lastHeartFrame = 0xFF;
     sStartMenuDataPtr->lastSelectedMenu = 0xFF;
+    for (u8 i = 0; i < PARTY_SIZE; i++)
+        sStartMenuDataPtr->hpBarSpriteIds[i] = SPRITE_NONE;
+    sStartMenuDataPtr->typeIconSpriteIds[0] = SPRITE_NONE;
+    sStartMenuDataPtr->typeIconSpriteIds[1] = SPRITE_NONE;
 
 
 /*    for(i= 0; i < 6; i++)
@@ -554,6 +631,8 @@ static bool8 StartMenuBook_DoGfxSetup(void)
         //CreateIconBox();
         CreateCursor();
         CreatePartyMonIcons();
+        CreatePartyHPBars();
+        PrintPartyLevels();
         DisplaySelectedPokemonDetails(gSelectedMenu);
         //CreateBookPortraitSprite(gSelectedMenu);
         //StartMenu_DisplayHP();
@@ -594,6 +673,8 @@ static void StartMenuBook_FreeResources(void) // Clear Everything if Leaving
     DestroyBookPortraitSprite();
     DestroyBookHeldItemIcon();
     DestroyBookHeartIcon();
+    DestroyPartyHPBars();
+    DestroyTypeIconSprites();
     StopCryAndClearCrySongs();
     ResetSpriteData();
     FreeAllSpritePalettes();
@@ -684,6 +765,11 @@ static bool8 StartMenuBook_LoadGraphics(void) // Load the Tilesets, Tilemaps, Sp
         sStartMenuDataPtr->gfxLoadState++;
         break;
     }
+    case 3:
+        LoadCompressedSpriteSheet(&gSpriteSheet_MoveTypes);
+        LoadPalette(gMoveTypes_Pal, OBJ_PLTT_ID(13), 3 * PLTT_SIZE_4BPP);
+        sStartMenuDataPtr->gfxLoadState++;
+        break;
     default:
         sStartMenuDataPtr->gfxLoadState = 0;
         return TRUE;
@@ -730,19 +816,11 @@ static void StartMenuBook_InitWindows(void)
 */
 
 //END LEFT SUMMARY SCREEN WINDOWS
-    
-    FillWindowPixelBuffer(WIN_RIGHT_NAMES, PIXEL_FILL(TEXT_COLOR_TRANSPARENT));
-    PutWindowTilemap(WIN_RIGHT_NAMES);
-    CopyWindowToVram(WIN_RIGHT_NAMES, COPYWIN_FULL);
-    
-    FillWindowPixelBuffer(WIN_RIGHT_HP_BARS, PIXEL_FILL(TEXT_COLOR_TRANSPARENT));
-    PutWindowTilemap(WIN_RIGHT_HP_BARS);
-    CopyWindowToVram(WIN_RIGHT_HP_BARS, COPYWIN_FULL);
-    
+
     FillWindowPixelBuffer(WIN_RIGHT_LVS, PIXEL_FILL(TEXT_COLOR_TRANSPARENT));
     PutWindowTilemap(WIN_RIGHT_LVS);
     CopyWindowToVram(WIN_RIGHT_LVS, COPYWIN_FULL);
-    
+
     ScheduleBgCopyTilemapToVram(2);
 }
 
@@ -1070,6 +1148,148 @@ static void DestroyPartyMonIcons(void)
     }
 }
 
+static u8 GetHPBarFrame(struct Pokemon *mon)
+{
+    u32 hp    = GetMonData(mon, MON_DATA_HP);
+    u32 maxHp = GetMonData(mon, MON_DATA_MAX_HP);
+
+    if (hp == 0 || maxHp == 0) return 0;   // hp0: fainted
+
+    u32 pct = (hp * 100) / maxHp;
+
+    if (pct < 10)  return 1;   // hp1
+    if (pct < 20)  return 2;   // hp10
+    if (pct < 30)  return 3;   // hp20
+    if (pct < 40)  return 4;   // hp30
+    if (pct < 50)  return 5;   // hp40
+    if (pct < 60)  return 6;   // hp50
+    if (pct < 70)  return 7;   // hp60
+    if (pct < 80)  return 8;   // hp70
+    if (pct < 90)  return 9;   // hp80
+    if (pct < 100) return 10;  // hp90
+    return 11;                  // hp100
+}
+
+static void CreatePartyHPBars(void)
+{
+    u8 i;
+    for (i = 0; i < gPlayerPartyCount; i++)
+    {
+        s16 x = 154 + (i % 2) * 53;
+        s16 y =  28 + (i / 2) * 43 + 34;  // 28px below icon top
+
+        u8 spriteId = CreateSprite(&sSpriteTemplate_HPBar, x, y, 1);
+        if (spriteId == MAX_SPRITES)
+            continue;
+
+        sStartMenuDataPtr->hpBarSpriteIds[i] = spriteId;
+        gSprites[spriteId].oam.priority = 0;
+        StartSpriteAnim(&gSprites[spriteId], GetHPBarFrame(&gPlayerParty[i]));
+    }
+}
+
+static void DestroyPartyHPBars(void)
+{
+    u8 i;
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (sStartMenuDataPtr->hpBarSpriteIds[i] != SPRITE_NONE)
+        {
+            DestroySprite(&gSprites[sStartMenuDataPtr->hpBarSpriteIds[i]]);
+            sStartMenuDataPtr->hpBarSpriteIds[i] = SPRITE_NONE;
+        }
+    }
+}
+
+static void PrintPartyLevels(void)
+{
+    u8 i;
+    u8 levelStr[8];
+
+    // Window covers x=152..240, y=88..159
+    // Text positions within window are relative to that origin.
+    FillWindowPixelBuffer(WIN_RIGHT_LVS, PIXEL_FILL(TEXT_COLOR_TRANSPARENT));
+
+    for (i = 0; i < gPlayerPartyCount; i++)
+    {
+        if (GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG))
+            continue;
+
+        //s16 hpBarX = 154 + (i % 2) * 53;
+        //s16 hpBarY = 28 + (i / 2) * 43 + 34;
+        s16 textX = (i % 2) * 53+15;       // window tilemapLeft=19 -> x=152
+        s16 textY = ((i / 2)) * 43+1; // window tilemapTop=11  -> y=88
+
+        StringCopy(levelStr, gText_Lv);
+        ConvertIntToDecimalStringN(
+            levelStr + StringLength(levelStr),
+            GetMonData(&gPlayerParty[i], MON_DATA_LEVEL),
+            STR_CONV_MODE_LEFT_ALIGN,
+            3
+        );
+
+        AddTextPrinterParameterized3(WIN_RIGHT_LVS, FONT_SMALL_NARROWER,
+                                     textX, textY, sFontColorTable[0], 0, levelStr);
+    }
+
+    CopyWindowToVram(WIN_RIGHT_LVS, COPYWIN_FULL);
+    PutWindowTilemap(WIN_RIGHT_LVS);
+}
+
+
+static void DestroyTypeIconSprites(void)
+{
+    u8 i;
+    for (i = 0; i < 2; i++)
+    {
+        if (sStartMenuDataPtr->typeIconSpriteIds[i] != SPRITE_NONE)
+        {
+            DestroySprite(&gSprites[sStartMenuDataPtr->typeIconSpriteIds[i]]);
+            sStartMenuDataPtr->typeIconSpriteIds[i] = SPRITE_NONE;
+        }
+    }
+}
+
+static void CreateOrUpdateTypeIcons(u16 species)
+{
+    u8 type1 = GetSpeciesType(species, 0);
+    u8 type2 = GetSpeciesType(species, 1);
+    bool8 hasTwoTypes = (type1 != type2);
+    struct Sprite *sprite;
+
+    if (sStartMenuDataPtr->typeIconSpriteIds[0] == SPRITE_NONE)
+    {
+        u8 spriteId = CreateSprite(&gSpriteTemplate_MoveTypes, TYPE_ICON_X, TYPE_ICON_Y1, 1);
+        if (spriteId == MAX_SPRITES)
+            return;
+        sStartMenuDataPtr->typeIconSpriteIds[0] = spriteId;
+    }
+    sprite = &gSprites[sStartMenuDataPtr->typeIconSpriteIds[0]];
+    sprite->x = TYPE_ICON_X;
+    sprite->y = TYPE_ICON_Y1;
+    sprite->invisible = FALSE;
+    sprite->oam.priority = 0;
+    StartSpriteAnim(sprite, type1);
+    sprite->oam.paletteNum = gTypesInfo[type1].palette;
+
+    if (sStartMenuDataPtr->typeIconSpriteIds[1] == SPRITE_NONE)
+    {
+        u8 spriteId = CreateSprite(&gSpriteTemplate_MoveTypes, TYPE_ICON_X, TYPE_ICON_Y2, 1);
+        if (spriteId == MAX_SPRITES)
+            return;
+        sStartMenuDataPtr->typeIconSpriteIds[1] = spriteId;
+    }
+    sprite = &gSprites[sStartMenuDataPtr->typeIconSpriteIds[1]];
+    sprite->x = TYPE_ICON_X;
+    sprite->y = TYPE_ICON_Y2;
+    sprite->invisible = !hasTwoTypes;
+    sprite->oam.priority = 0;
+    if (hasTwoTypes)
+    {
+        StartSpriteAnim(sprite, type2);
+        sprite->oam.paletteNum = gTypesInfo[type2].palette;
+    }
+}
 
 static void DisplaySelectedPokemonDetails(u8 index)
 {
@@ -1126,6 +1346,10 @@ static void DisplaySelectedPokemonDetails(u8 index)
     // FRIENDSHIP HEART
     u8 friendship = GetMonData(mon, MON_DATA_FRIENDSHIP);
     CreateOrUpdateBookHeartIcon(friendship);
+
+    // TYPE ICONS
+    u16 species = GetMonData(mon, MON_DATA_SPECIES_OR_EGG);
+    CreateOrUpdateTypeIcons(species);
 }
 
 

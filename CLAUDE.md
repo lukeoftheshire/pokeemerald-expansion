@@ -255,28 +255,6 @@ Active branch: `feature_main_menu`
 
 ### Known Bugs
 
-**Double audio and animation on open**
-Symptoms: animation and sound play twice on open only.
-Check: StartBookMenu called once only; task not created twice; VBlank callback not installed twice;
-sound not triggered on both init and first-update state; script-based and UI-based open paths not both firing.
-
-**Fast scrolling breaks animations (cries unaffected)**
-Check: StartSpriteAnim only called on real selection change not every input; sprites not
-re-initialized on every input; anim IDs not overwritten by task data reuse; OAM updates running
-reliably during heavy input.
-
-**StartBookMenu undefined reference at link time**
-Check: not declared static; declared in header included by debug.c; src/start_menu_book.c in build
-system; declaration signature matches definition; symbol name exact with no macro mangling.
-
-**Horizontal text clipping**
-Check: window width in tiles matches tilemap width; text buffer sufficient; GetFontIdToFit receives
-a string pointer not a u32 (prior bug: passing level integer caused pointer-from-integer warning).
-
-**Tilemap width mismatch**
-Check: tilemap dimensions match BG template screenSize; window template width/height and offsets
-consistent; gBgTilemapBuffer copy ranges correct; decompression/blitting writes correct size.
-
 ---
 
 ## Major Initiative: Quest System and Quest Menu UI
