@@ -666,7 +666,7 @@ static void ResetSpriteAfterAnim(struct Sprite *sprite)
             sprite->hFlip = FALSE;
 
         FreeOamMatrix(sprite->oam.matrixNum);
-        sprite->oam.matrixNum |= (sprite->hFlip << 3);
+        sprite->oam.matrixNum = (sprite->hFlip << 3);
         sprite->oam.affineMode = ST_OAM_AFFINE_OFF;
     }
 #ifdef BUGFIX

@@ -49,6 +49,7 @@
 #include "move.h"
 #include "trainer_pokemon_sprites.h"
 #include "pokemon.h"
+#include "pokemon_animation.h"
 #include "party_menu.h"
 
 
@@ -73,7 +74,8 @@ struct StartMenuResources
     u8 lastSelectedMenu;
     u8 heldItemSpriteId;
     u16 heldItemItemId; // last shown item, for quick no-op updates
-    u8
+    u8 heartSpriteId;
+    u8 lastHeartFrame;  // 0xFF = unset
 };
 
 
@@ -133,9 +135,11 @@ static void CreatePartyMonIcons(void);
 static void DestroyPartyMonIcons(void);
 static void DestroyBookPortraitSprite(void);
 static void CreateBookPortraitSprite(u8 partyIndex);
-static void SpriteCB_Pokemon(struct Sprite *sprite);
+static void SpriteCB_BookPokemon(struct Sprite *sprite);
 static void CreateOrUpdateBookHeldItemIcon(u16 itemId);
 static void DestroyBookHeldItemIcon(void);
+static void CreateOrUpdateBookHeartIcon(u8 friendship);
+static void DestroyBookHeartIcon(void);
 
 /// BG Configuration
 static const struct BgTemplate sBookBgTemplates[] =
@@ -218,6 +222,16 @@ static const u16 sBookPalette[] = INCBIN_U16("graphics/start_menu_book/test_pal.
 static const u32 sCursor_Gfx[] = INCBIN_U32("graphics/start_menu_book/cursor.4bpp.lz");
 static const u16 sCursor_Pal[] = INCBIN_U16("graphics/start_menu_book/cursor.gbapal");
 
+// friendship hearts (share cursor palette)
+static const u8 sHeart0_Gfx[]    = INCBIN_U8("graphics/start_menu_book/heart_0.4bpp");
+static const u8 sHeart25_Gfx[]   = INCBIN_U8("graphics/start_menu_book/heart_25.4bpp");
+static const u8 sHeart50_Gfx[]   = INCBIN_U8("graphics/start_menu_book/heart_50.4bpp");
+static const u8 sHeart75_Gfx[]   = INCBIN_U8("graphics/start_menu_book/heart_75.4bpp");
+static const u8 sHeart100_Gfx[]  = INCBIN_U8("graphics/start_menu_book/heart_100.4bpp");
+static const u8 sHeartPerf_Gfx[]  = INCBIN_U8("graphics/start_menu_book/heart_perf.4bpp");
+static const u8 sHeartPerf2_Gfx[] = INCBIN_U8("graphics/start_menu_book/heart_perf2.4bpp");
+static const u8 sHeartPerf3_Gfx[] = INCBIN_U8("graphics/start_menu_book/heart_perf3.4bpp");
+
 //HP Bar - todo
 /*
 static const u8 sHPBar_100_Percent_Gfx[]  = INCBIN_U8("graphics/ui_startmenu_full/sHPBar_100_Percent_Gfx.4bpp");
@@ -289,8 +303,65 @@ static const struct SpriteTemplate sSpriteTemplate_Cursor =
     .callback = CursorCallback
 };
 
+// friendship heart sprite (16x16, shares cursor palette, image-based so no tile tag needed)
+static const struct SpriteFrameImage sHeartImages[] =
+{
+    { sHeart0_Gfx,    128 },  // 0: heart_0
+    { sHeart25_Gfx,   128 },  // 1: heart_25
+    { sHeart50_Gfx,   128 },  // 2: heart_50
+    { sHeart75_Gfx,   128 },  // 3: heart_75
+    { sHeart100_Gfx,  128 },  // 4: heart_100
+    { sHeartPerf_Gfx,  128 },  // 5: heart_perf
+    { sHeartPerf2_Gfx, 128 },  // 6: heart_perf2
+    { sHeartPerf3_Gfx, 128 },  // 7: heart_perf3
+};
+
+static const struct OamData sOamData_Heart =
+{
+    .size = SPRITE_SIZE(16x16),
+    .shape = SPRITE_SHAPE(16x16),
+    .priority = 0,
+};
+
+static const union AnimCmd sHeartAnim_0[] = { ANIMCMD_FRAME(0, 1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHeartAnim_1[] = { ANIMCMD_FRAME(1, 1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHeartAnim_2[] = { ANIMCMD_FRAME(2, 1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHeartAnim_3[] = { ANIMCMD_FRAME(3, 1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHeartAnim_4[] = { ANIMCMD_FRAME(4, 1), ANIMCMD_JUMP(0) };
+static const union AnimCmd sHeartAnim_5[] = {
+    ANIMCMD_FRAME(5, 12),   // perf (full sparkle)
+    ANIMCMD_FRAME(6, 8),    // perf2 (medium)
+    ANIMCMD_FRAME(7, 6),    // perf3 (smallest)
+    ANIMCMD_FRAME(6, 8),    // perf2 (back up)
+    ANIMCMD_JUMP(0),
+};
+
+static const union AnimCmd *const sHeartAnimTable[] =
+{
+    sHeartAnim_0,
+    sHeartAnim_1,
+    sHeartAnim_2,
+    sHeartAnim_3,
+    sHeartAnim_4,
+    sHeartAnim_5,
+};
+
+static const struct SpriteTemplate sSpriteTemplate_Heart =
+{
+    .tileTag = TAG_NONE,
+    .paletteTag = TAG_CURSOR,
+    .oam = &sOamData_Heart,
+    .anims = sHeartAnimTable,
+    .images = sHeartImages,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+
+#define HEART_CENTER_X 109
+#define HEART_CENTER_Y 64
+
 //
-//  Begin Sprite Loading Functions
+//  Begin Sprite Loading Functions25
 //
 
 //
@@ -385,11 +456,14 @@ void StartBookMenu(MainCallback callback)
     }
 
     // Make Sure Sprites are Empty on Reload
+     gMain.state = 0;
     sStartMenuDataPtr->gfxLoadState = 0;
     sStartMenuDataPtr->savedCallback = callback;
     sStartMenuDataPtr->cursorSpriteId = SPRITE_NONE;
     sStartMenuDataPtr->portraitSpriteId = SPRITE_NONE;
     sStartMenuDataPtr->heldItemSpriteId = SPRITE_NONE;
+    sStartMenuDataPtr->heartSpriteId = SPRITE_NONE;
+    sStartMenuDataPtr->lastHeartFrame = 0xFF;
     sStartMenuDataPtr->lastSelectedMenu = 0xFF;
 
 
@@ -519,6 +593,7 @@ static void StartMenuBook_FreeResources(void) // Clear Everything if Leaving
     DestroyPartyMonIcons();
     DestroyBookPortraitSprite();
     DestroyBookHeldItemIcon();
+    DestroyBookHeartIcon();
     StopCryAndClearCrySongs();
     ResetSpriteData();
     FreeAllSpritePalettes();
@@ -1047,6 +1122,10 @@ static void DisplaySelectedPokemonDetails(u8 index)
     // HELD ITEM
     u16 held = GetMonData(mon, MON_DATA_HELD_ITEM);
     CreateOrUpdateBookHeldItemIcon(held);
+
+    // FRIENDSHIP HEART
+    u8 friendship = GetMonData(mon, MON_DATA_FRIENDSHIP);
+    CreateOrUpdateBookHeartIcon(friendship);
 }
 
 
@@ -1070,9 +1149,15 @@ static void CreateBookPortraitSprite(u8 partyIndex)
     sStartMenuDataPtr->portraitSpriteId = spriteId;
     if (spriteId != SPRITE_NONE)
     {
-        gSprites[spriteId].data[0] = GetMonData(&gPlayerParty[partyIndex],MON_DATA_SPECIES_OR_EGG);
-        gSprites[spriteId].callback = SpriteCB_Pokemon;
+        u16 species = GetMonData(&gPlayerParty[partyIndex], MON_DATA_SPECIES_OR_EGG);
+        gSprites[spriteId].data[0] = species;
         gSprites[spriteId].oam.priority = 0;
+        if (!IsMonSpriteNotFlipped(species))
+        {
+            gSprites[spriteId].affineAnims = gAffineAnims_BattleSpriteContest;
+            StartSpriteAffineAnim(&gSprites[spriteId], BATTLER_AFFINE_NORMAL);
+        }
+        gSprites[spriteId].callback = SpriteCB_BookPokemon;
     }
 }
 
@@ -1092,9 +1177,15 @@ static void DestroyBookPortraitSprite(void)
     }
 }
 
-static void SpriteCB_Pokemon(struct Sprite *sprite)
+static void SpriteCB_BookPokemon(struct Sprite *sprite)
 {
-    DoMonFrontSpriteAnimation(sprite, sprite->data[0], FALSE, 1);
+    u16 species = sprite->data[0];
+    PlayCry_Normal(species, 0);
+    if (HasTwoFramesAnimation(species))
+        StartSpriteAnim(sprite, 1);
+    sprite->data[0] = 0; // animation callbacks expect data[0] = 0 as initial state
+    sprite->data[1] = IsMonSpriteNotFlipped(species); // sDontFlip: controls flip direction in summary anim
+    StartMonSummaryAnimation(sprite, gSpeciesInfo[species].frontAnimId);
 }
 
 /////DISPLAY ITEM FXNs
@@ -1154,6 +1245,52 @@ static void CreateOrUpdateBookHeldItemIcon(u16 itemId)
     gSprites[spriteId].oam.priority = 0; // in front of BG
 }
 
+/////DISPLAY HEART FXNs
+
+static u8 GetHeartFrameForFriendship(u8 friendship)
+{
+    if (friendship == 255)  return 5; // heart_perf
+    if (friendship >= 230)  return 4; // heart_100 (>=90% of 255)
+    if (friendship >= 192)  return 3; // heart_75  (>=75%)
+    if (friendship >= 128)  return 2; // heart_50  (>=50%)
+    if (friendship >= 64)   return 1; // heart_25  (>=25%)
+    return 0;                          // heart_0
+}
+
+static void DestroyBookHeartIcon(void)
+{
+    if (sStartMenuDataPtr->heartSpriteId == SPRITE_NONE)
+        return;
+
+    DestroySprite(&gSprites[sStartMenuDataPtr->heartSpriteId]);
+    sStartMenuDataPtr->heartSpriteId = SPRITE_NONE;
+    sStartMenuDataPtr->lastHeartFrame = 0xFF;
+}
+
+static void CreateOrUpdateBookHeartIcon(u8 friendship)
+{
+    u8 frame = GetHeartFrameForFriendship(friendship);
+
+    if (sStartMenuDataPtr->heartSpriteId != SPRITE_NONE
+        && sStartMenuDataPtr->lastHeartFrame == frame)
+        return;
+
+    if (sStartMenuDataPtr->heartSpriteId == SPRITE_NONE)
+    {
+        u8 spriteId = CreateSprite(&sSpriteTemplate_Heart,
+                                   HEART_CENTER_X - 8,
+                                   HEART_CENTER_Y, 0);
+        if (spriteId == MAX_SPRITES)
+            return;
+        sStartMenuDataPtr->heartSpriteId = spriteId;
+        gSprites[spriteId].oam.priority = 0;
+    }
+
+    StartSpriteAnim(&gSprites[sStartMenuDataPtr->heartSpriteId], frame);
+    sStartMenuDataPtr->lastHeartFrame = frame;
+}
+
+/*
 static void ShowLeftMonTypes(void){
     if (summary->isEgg)
         {
@@ -1180,4 +1317,5 @@ static void ShowLeftMonTypes(void){
 
 }
 
+*/
 

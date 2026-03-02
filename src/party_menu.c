@@ -1313,8 +1313,10 @@ void AnimatePartySlot(u8 slot, u8 animNum)
         return;
     case PARTY_SIZE: // Confirm
         if (animNum == 0)
+            //SetBgTilemapPalette(1, 23, 16, 7, 2, 1);
             SetBgTilemapPalette(1, 23, 16, 7, 2, 1);
         else
+            //SetBgTilemapPalette(1, 23, 16, 7, 2, 2);
             SetBgTilemapPalette(1, 23, 16, 7, 2, 2);
         spriteId = sPartyMenuInternal->spriteIdConfirmPokeball;
         break;
