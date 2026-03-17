@@ -101,6 +101,9 @@ LittlerootTown_EventScript_SetMomInFrontOfDoorMale::
 Speaker_Jeremy:
     .string "Jeremy$"
 
+Speaker_Margaret:
+    .string "Margaret$"
+
 LittlerootTown_EventScript_SetMomInFrontOfDoorFemale::
 	setobjectxyperm LOCALID_LITTLEROOT_MOM, 14, 9
 	return
@@ -255,12 +258,8 @@ LittlerootTown_EventScript_Boy::
 	msgbox LittlerootTown_Text_BirchSpendsDaysInLab, MSGBOX_NPC
 	end
 
-LittlerootTown_EventScript_Huh::
-    createfieldmugshot MUGSHOT_TEST, EMOTE_NORMAL
-    setspeaker Speaker_Jeremy
-	msgbox LittlerootTown_Text_WhoAmIHowDidIGetHere, MSGBOX_NPC
-	removefieldmugshot
-	end
+@ LittlerootTown_EventScript_Huh (Jeremy) and LittlerootTown_EventScript_Margaret
+@ are defined as native poryscript scripts below the raw block.
 
 LittlerootTown_EventScript_Twin::
 	lock
@@ -1036,4 +1035,111 @@ LittlerootTown_Text_WhoAmIHowDidIGetHere:
 	.string "They're harder to see at evening,\n"
 	.string "but they brighten up as time passes.$"
 
+LittlerootTown_Text_Jeremy_GiveQuest:
+	.string "JEREMY: Evenin'. Name's Jeremy.\p"
+	.string "I've been watching the critters\n"
+	.string "on Route 101 for years.\p"
+	.string "See if you can catch a Zigzagoon\n"
+	.string "out there for me.\p"
+	.string "I'll teach you how to read\n"
+	.string "a wild {PKMN}'s temperament.$"
+
+LittlerootTown_Text_Jeremy_StillLooking:
+	.string "JEREMY: Still hunting, eh?\p"
+	.string "Zigzagoon are common enough\n"
+	.string "on Route 101.\p"
+	.string "Skittish little things, but\n"
+	.string "they're out there.$"
+
+LittlerootTown_Text_Jeremy_GiveReward:
+	.string "JEREMY: Ha! You found one.\p"
+	.string "Zigzagoon are sharp creatures.\n"
+	.string "Watch one long enough and\l"
+	.string "you start reading its nature.\p"
+	.string "I'll show you what to look for.\n"
+	.string "From now on, you'll be able to\l"
+	.string "sense a wild {PKMN}'s nature.$"
+
+LittlerootTown_Text_Jeremy_Complete:
+	.string "JEREMY: You've got a good eye\n"
+	.string "for wild {PKMN} now.\p"
+	.string "Keep at it.$"
+
+LittlerootTown_Text_Margaret_GiveQuest:
+	.string "MARGARET: I study the silk-spinning\n"
+	.string "habits of Bug-types out here.\p"
+	.string "Wurmple are common on Route 101\n"
+	.string "but I keep scaring them off.\p"
+	.string "Catch one for me and I'll show\n"
+	.string "you how to spot what a wild {PKMN}\l"
+	.string "is carrying.$"
+
+LittlerootTown_Text_Margaret_StillLooking:
+	.string "MARGARET: Any luck with those\n"
+	.string "Wurmple?\p"
+	.string "They tend to hide in the long grass\n"
+	.string "near the treeline.$"
+
+LittlerootTown_Text_Margaret_GiveReward:
+	.string "MARGARET: Oh, wonderful!\n"
+	.string "Look at the texture of that silk.\p"
+	.string "Now, here's what I've learned\n"
+	.string "about reading what a wild {PKMN}\l"
+	.string "carries with it.\p"
+	.string "From now on you'll be able to spot\n"
+	.string "a held item before the battle ends.$"
+
+LittlerootTown_Text_Margaret_Complete:
+	.string "MARGARET: That silk research is\n"
+	.string "coming along nicely.\p"
+	.string "Keep an eye out for unusual\n"
+	.string "items on wild {PKMN}.$"
+
 `
+
+script LittlerootTown_EventScript_Huh {
+    lock
+    faceplayer
+    createfieldmugshot MUGSHOT_TEST, EMOTE_NORMAL
+    setspeaker Speaker_Jeremy
+    if (questmenu(QUEST_MENU_CHECK_COMPLETE, QUEST_1)) {
+        msgbox(LittlerootTown_Text_Jeremy_Complete, MSGBOX_DEFAULT)
+    } elif (questmenu(QUEST_MENU_CHECK_ACTIVE, QUEST_1)) {
+        if (getcaughtmon(SPECIES_ZIGZAGOON)) {
+            msgbox(LittlerootTown_Text_Jeremy_GiveReward, MSGBOX_DEFAULT)
+            setflag FLAG_CAN_SEE_WILD_NATURE
+            questmenu QUEST_MENU_COMPLETE_QUEST, QUEST_1
+        } else {
+            msgbox(LittlerootTown_Text_Jeremy_StillLooking, MSGBOX_DEFAULT)
+        }
+    } else {
+        msgbox(LittlerootTown_Text_Jeremy_GiveQuest, MSGBOX_DEFAULT)
+        questmenu QUEST_MENU_SET_ACTIVE, QUEST_1
+    }
+    removefieldmugshot
+    release
+}
+
+script LittlerootTown_EventScript_Margaret {
+    lock
+    faceplayer
+    createfieldmugshot MUGSHOT_TEST, EMOTE_NORMAL
+    setspeaker Speaker_Margaret
+    if (questmenu(QUEST_MENU_CHECK_COMPLETE, QUEST_2)) {
+        msgbox(LittlerootTown_Text_Margaret_Complete, MSGBOX_DEFAULT)
+    } elif (questmenu(QUEST_MENU_CHECK_ACTIVE, QUEST_2)) {
+        if (getcaughtmon(SPECIES_WURMPLE)) {
+            msgbox(LittlerootTown_Text_Margaret_GiveReward, MSGBOX_DEFAULT)
+            setflag FLAG_CAN_SEE_WILD_ITEM
+            questmenu QUEST_MENU_COMPLETE_QUEST, QUEST_2
+        } else {
+            msgbox(LittlerootTown_Text_Margaret_StillLooking, MSGBOX_DEFAULT)
+        }
+    } else {
+        msgbox(LittlerootTown_Text_Margaret_GiveQuest, MSGBOX_DEFAULT)
+        questmenu QUEST_MENU_SET_ACTIVE, QUEST_2
+    }
+    removefieldmugshot
+    release
+}
+

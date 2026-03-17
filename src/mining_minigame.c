@@ -32,6 +32,7 @@
 #include "random.h"
 #include "field_message_box.h"
 #include "constants/items.h"
+#include "constants/maps.h"
 #include "item.h"
 #include "data/mining_minigame.h"
 
@@ -1517,6 +1518,11 @@ void StartMining(void)
     Mining_Init(CB2_ReturnToField);
 }
 
+void StartMiningWithCallback(MainCallback returnCb)
+{
+    Mining_Init(returnCb);
+}
+
 static void Mining_Init(MainCallback callback)
 {
     sMiningUiState = AllocZeroed(sizeof(struct MiningState));
@@ -1936,10 +1942,6 @@ static void ClearItemMap(void)
         sMiningUiState->itemMap[i] = MINING_ITEM_TILE_NONE;
 }
 
-#define RARITY_COMMON   0
-#define RARITY_UNCOMMON 1
-#define RARITY_RARE     2
-
 static const u32 ItemRarityTable_Common[] =
 {
     MININGID_HEART_SCALE,
@@ -1978,8 +1980,170 @@ static const u32 ItemRarityTable_Rare[] =
     MININGID_ARMOR_FOSSIL,
 };
 
+// -----------------------------------------------------------------------
+// Per-location mining item pools
+// When a pool exists for the current map, GetRandomItemId uses it instead
+// of the global rarity tables above. Maps with no entry in the location
+// table fall back to the global tables for item generation, and display
+// nothing on the Minerals book tab.
+// Sentinel row (0xFF, 0xFF) must be last.
+//
+// All configuration lives here. Add new location rows to sMiningLocationPools
+// and define the corresponding pool + item arrays above it.
+// -----------------------------------------------------------------------
+
+struct MiningPool
+{
+    const u32 *common;
+    u8         commonCount;
+    const u32 *uncommon;
+    u8         uncommonCount;
+    const u32 *rare;
+    u8         rareCount;
+};
+
+struct MiningLocationPool
+{
+    u8 mapGroup;
+    u8 mapNum;
+    const struct MiningPool *pool;
+};
+
+// --- Cave pool (Granite Cave, Victory Road) ---
+static const u32 sMiningCommon_Cave[]   = { MININGID_HEART_SCALE, MININGID_RED_SHARD, MININGID_BLUE_SHARD, MININGID_YELLOW_SHARD, MININGID_GREEN_SHARD };
+static const u32 sMiningUncommon_Cave[] = { MININGID_HARD_STONE, MININGID_REVIVE, MININGID_IRON_BALL };
+static const u32 sMiningRare_Cave[]     = { MININGID_SKULL_FOSSIL, MININGID_ARMOR_FOSSIL, MININGID_DAMP_ROCK };
+STATIC_ASSERT(ARRAY_COUNT(sMiningCommon_Cave)   <= MINING_DISPLAY_MAX_COMMON,   MiningCaveCommonOverflow);
+STATIC_ASSERT(ARRAY_COUNT(sMiningUncommon_Cave) <= MINING_DISPLAY_MAX_UNCOMMON, MiningCaveUncommonOverflow);
+STATIC_ASSERT(ARRAY_COUNT(sMiningRare_Cave)     <= MINING_DISPLAY_MAX_RARE,     MiningCaveRareOverflow);
+
+static const struct MiningPool sMiningPool_Cave =
+{
+    .common       = sMiningCommon_Cave,   .commonCount   = ARRAY_COUNT(sMiningCommon_Cave),
+    .uncommon     = sMiningUncommon_Cave, .uncommonCount = ARRAY_COUNT(sMiningUncommon_Cave),
+    .rare         = sMiningRare_Cave,     .rareCount     = ARRAY_COUNT(sMiningRare_Cave),
+};
+
+// --- Littleroot Town ---
+static const u32 sMiningCommon_Littleroot[]   = { MININGID_HEART_SCALE, MININGID_RED_SHARD };
+static const u32 sMiningUncommon_Littleroot[] = { MININGID_OVAL_STONE, MININGID_EVER_STONE };
+static const u32 sMiningRare_Littleroot[]     = { MININGID_FIRE_STONE };
+STATIC_ASSERT(ARRAY_COUNT(sMiningCommon_Littleroot)   <= MINING_DISPLAY_MAX_COMMON,   MiningLittlerootCommonOverflow);
+STATIC_ASSERT(ARRAY_COUNT(sMiningUncommon_Littleroot) <= MINING_DISPLAY_MAX_UNCOMMON, MiningLittlerootUncommonOverflow);
+STATIC_ASSERT(ARRAY_COUNT(sMiningRare_Littleroot)     <= MINING_DISPLAY_MAX_RARE,     MiningLittlerootRareOverflow);
+
+static const struct MiningPool sMiningPool_Littleroot =
+{
+    .common       = sMiningCommon_Littleroot,   .commonCount   = ARRAY_COUNT(sMiningCommon_Littleroot),
+    .uncommon     = sMiningUncommon_Littleroot, .uncommonCount = ARRAY_COUNT(sMiningUncommon_Littleroot),
+    .rare         = sMiningRare_Littleroot,     .rareCount     = ARRAY_COUNT(sMiningRare_Littleroot),
+};
+
+// --- Route 101 ---
+static const u32 sMiningCommon_Route101[]   = { MININGID_RED_SHARD, MININGID_HEART_SCALE };
+static const u32 sMiningUncommon_Route101[] = { MININGID_HARD_STONE, MININGID_EVER_STONE };
+static const u32 sMiningRare_Route101[]     = { MININGID_LEAF_STONE, MININGID_SMOOTH_ROCK };
+STATIC_ASSERT(ARRAY_COUNT(sMiningCommon_Route101)   <= MINING_DISPLAY_MAX_COMMON,   MiningRoute101CommonOverflow);
+STATIC_ASSERT(ARRAY_COUNT(sMiningUncommon_Route101) <= MINING_DISPLAY_MAX_UNCOMMON, MiningRoute101UncommonOverflow);
+STATIC_ASSERT(ARRAY_COUNT(sMiningRare_Route101)     <= MINING_DISPLAY_MAX_RARE,     MiningRoute101RareOverflow);
+
+static const struct MiningPool sMiningPool_Route101 =
+{
+    .common       = sMiningCommon_Route101,   .commonCount   = ARRAY_COUNT(sMiningCommon_Route101),
+    .uncommon     = sMiningUncommon_Route101, .uncommonCount = ARRAY_COUNT(sMiningUncommon_Route101),
+    .rare         = sMiningRare_Route101,     .rareCount     = ARRAY_COUNT(sMiningRare_Route101),
+};
+
+// --- Route 102 ---
+static const u32 sMiningCommon_Route102[]   = { MININGID_BLUE_SHARD, MININGID_HEART_SCALE };
+static const u32 sMiningUncommon_Route102[] = { MININGID_HARD_STONE, MININGID_DAMP_ROCK };
+static const u32 sMiningRare_Route102[]     = { MININGID_WATER_STONE, MININGID_ICY_ROCK };
+STATIC_ASSERT(ARRAY_COUNT(sMiningCommon_Route102)   <= MINING_DISPLAY_MAX_COMMON,   MiningRoute102CommonOverflow);
+STATIC_ASSERT(ARRAY_COUNT(sMiningUncommon_Route102) <= MINING_DISPLAY_MAX_UNCOMMON, MiningRoute102UncommonOverflow);
+STATIC_ASSERT(ARRAY_COUNT(sMiningRare_Route102)     <= MINING_DISPLAY_MAX_RARE,     MiningRoute102RareOverflow);
+
+static const struct MiningPool sMiningPool_Route102 =
+{
+    .common       = sMiningCommon_Route102,   .commonCount   = ARRAY_COUNT(sMiningCommon_Route102),
+    .uncommon     = sMiningUncommon_Route102, .uncommonCount = ARRAY_COUNT(sMiningUncommon_Route102),
+    .rare         = sMiningRare_Route102,     .rareCount     = ARRAY_COUNT(sMiningRare_Route102),
+};
+
+// --- Per-location table ---
+// Maps listed here use the specified pool. Maps NOT listed display nothing
+// on the Minerals book tab and use the global rarity tables during play.
+// Add one row per map where you want a route-specific item pool.
+
+static const struct MiningLocationPool sMiningLocationPools[] =
+{
+    // --- Towns ---
+    { MAP_GROUP(MAP_LITTLEROOT_TOWN), MAP_NUM(MAP_LITTLEROOT_TOWN), &sMiningPool_Littleroot },
+
+    // --- Routes ---
+    { MAP_GROUP(MAP_ROUTE101), MAP_NUM(MAP_ROUTE101), &sMiningPool_Route101 },
+    { MAP_GROUP(MAP_ROUTE102), MAP_NUM(MAP_ROUTE102), &sMiningPool_Route102 },
+
+    // --- Caves ---
+    { MAP_GROUP(MAP_GRANITE_CAVE_1F),  MAP_NUM(MAP_GRANITE_CAVE_1F),  &sMiningPool_Cave },
+    { MAP_GROUP(MAP_GRANITE_CAVE_B1F), MAP_NUM(MAP_GRANITE_CAVE_B1F), &sMiningPool_Cave },
+    { MAP_GROUP(MAP_GRANITE_CAVE_B2F), MAP_NUM(MAP_GRANITE_CAVE_B2F), &sMiningPool_Cave },
+    { MAP_GROUP(MAP_VICTORY_ROAD_1F),  MAP_NUM(MAP_VICTORY_ROAD_1F),  &sMiningPool_Cave },
+    { MAP_GROUP(MAP_VICTORY_ROAD_B1F), MAP_NUM(MAP_VICTORY_ROAD_B1F), &sMiningPool_Cave },
+    { MAP_GROUP(MAP_VICTORY_ROAD_B2F), MAP_NUM(MAP_VICTORY_ROAD_B2F), &sMiningPool_Cave },
+
+    { 0xFF, 0xFF, NULL }, // sentinel - must be last
+};
+
+static const struct MiningPool *GetMiningPoolForCurrentMap(void)
+{
+    u8 group = gSaveBlock1Ptr->location.mapGroup;
+    u8 num   = gSaveBlock1Ptr->location.mapNum;
+    u32 i;
+
+    for (i = 0; sMiningLocationPools[i].mapGroup != 0xFF; i++)
+    {
+        if (sMiningLocationPools[i].mapGroup == group && sMiningLocationPools[i].mapNum == num)
+            return sMiningLocationPools[i].pool;
+    }
+    return NULL;
+}
+
+// Fills out arrays of bag item IDs split by rarity tier for the current map.
+// Returns empty arrays for maps not listed in sMiningLocationPools.
+// AGB_ASSERTs if a pool's tier count exceeds the given max - use the
+// MINING_DISPLAY_MAX_* constants from mining_minigame.h as the max arguments.
+// Used by the book menu Minerals tab to display what can be found here.
+void GetMiningDisplayItems(
+    u16 *commonOut,   u8 *commonCount,
+    u16 *uncommonOut, u8 *uncommonCount,
+    u16 *rareOut,     u8 *rareCount,
+    u8 maxCommon, u8 maxUncommon, u8 maxRare)
+{
+    const struct MiningPool *pool = GetMiningPoolForCurrentMap();
+    u32 i;
+
+    *commonCount   = 0;
+    *uncommonCount = 0;
+    *rareCount     = 0;
+
+    if (pool == NULL)
+        return;
+
+    AGB_ASSERT(pool->commonCount   <= maxCommon);
+    AGB_ASSERT(pool->uncommonCount <= maxUncommon);
+    AGB_ASSERT(pool->rareCount     <= maxRare);
+
+    for (i = 0; i < pool->commonCount && *commonCount < maxCommon; i++)
+        commonOut[(*commonCount)++] = MiningItemList[pool->common[i]].bagItemId;
+    for (i = 0; i < pool->uncommonCount && *uncommonCount < maxUncommon; i++)
+        uncommonOut[(*uncommonCount)++] = MiningItemList[pool->uncommon[i]].bagItemId;
+    for (i = 0; i < pool->rareCount && *rareCount < maxRare; i++)
+        rareOut[(*rareCount)++] = MiningItemList[pool->rare[i]].bagItemId;
+}
+
 static u8 GetRandomItemId()
 {
+    const struct MiningPool *pool = GetMiningPoolForCurrentMap();
     u32 rarity;
     u32 index;
     u32 itemId;
@@ -1992,29 +2156,61 @@ static u8 GetRandomItemId()
     else
         rarity = RARITY_RARE;
 
+    if (pool != NULL)
+    {
+        const u32 *table = NULL;
+        u8 count = 0;
+
+        if (rarity == RARITY_COMMON && pool->common != NULL && pool->commonCount > 0)
+        {
+            table = pool->common;
+            count = pool->commonCount;
+        }
+        else if (rarity == RARITY_UNCOMMON && pool->uncommon != NULL && pool->uncommonCount > 0)
+        {
+            table = pool->uncommon;
+            count = pool->uncommonCount;
+        }
+        else if (rarity == RARITY_RARE && pool->rare != NULL && pool->rareCount > 0)
+        {
+            table = pool->rare;
+            count = pool->rareCount;
+        }
+
+        if (table != NULL)
+        {
+            itemId = table[random(count)];
+#if DEBUG_ENABLE_ITEM_GENERATION_OPTIONS == TRUE
+            return Debug_CreateRandomItem(rarity, itemId);
+#else
+            return itemId;
+#endif
+        }
+    }
+
+    // Global fallback (no map pool, or the tier was empty)
     switch (rarity)
     {
-        case RARITY_COMMON:
-            index = random(ARRAY_COUNT(ItemRarityTable_Common));
-            itemId =  ItemRarityTable_Common[index];
-            break;
-        case RARITY_UNCOMMON:
-            index = random(ARRAY_COUNT(ItemRarityTable_Uncommon));
-            itemId =  ItemRarityTable_Uncommon[index];
-            break;
-        case RARITY_RARE:
-            index = random(ARRAY_COUNT(ItemRarityTable_Rare));
-            itemId =  ItemRarityTable_Rare[index];
-            break;
+    case RARITY_COMMON:
+        index = random(ARRAY_COUNT(ItemRarityTable_Common));
+        itemId = ItemRarityTable_Common[index];
+        break;
+    case RARITY_UNCOMMON:
+        index = random(ARRAY_COUNT(ItemRarityTable_Uncommon));
+        itemId = ItemRarityTable_Uncommon[index];
+        break;
+    case RARITY_RARE:
+    default:
+        index = random(ARRAY_COUNT(ItemRarityTable_Rare));
+        itemId = ItemRarityTable_Rare[index];
+        break;
     }
 
 #if DEBUG_ENABLE_ITEM_GENERATION_OPTIONS == TRUE
-    return Debug_CreateRandomItem(rarity,itemId);
+    return Debug_CreateRandomItem(rarity, itemId);
 #else
     return itemId;
 #endif
-
-    return 0;
 }
 
 static void InitItemsIfSelected(u32 item, u32 itemId) {

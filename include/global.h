@@ -12,6 +12,7 @@
 #include "constants/global.h"
 #include "constants/flags.h"
 #include "constants/vars.h"
+#include "config/dexnav.h"
 #include "constants/species.h"
 #include "constants/pokedex.h"
 #include "constants/apricorn_tree.h"

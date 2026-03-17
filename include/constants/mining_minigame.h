@@ -108,6 +108,18 @@ enum
 
 #define MINING_COUNT_ID_STONE           MININGID_STONE_MUSHROOM2
 
+/*********** RARITY TIERS ************/
+#define RARITY_COMMON   0
+#define RARITY_UNCOMMON 1
+#define RARITY_RARE     2
+
+/*********** BOOK TAB DISPLAY LIMITS ************/
+// Maximum items shown per tier on the Minerals notebook tab.
+// Pool arrays in mining_minigame.c are STATIC_ASSERTed against these.
+#define MINING_DISPLAY_MAX_COMMON    6
+#define MINING_DISPLAY_MAX_UNCOMMON  6
+#define MINING_DISPLAY_MAX_RARE      3
+
 #define MINING_ZONE_WIDTH 12
 #define MINING_ZONE_HEIGHT 8
 

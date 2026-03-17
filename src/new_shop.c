@@ -279,6 +279,7 @@ static void RecordItemPurchase(u8 taskId);
 static void Task_ReturnToItemListAfterItemPurchase(u8 taskId);
 static void Task_HandleShopMenuBuy(u8 taskId);
 static void Task_HandleShopMenuSell(u8 taskId);
+static void CB2_GoToSellMenuNewShop(void);
 static void PrintMoneyLocal(u8 windowId, u32 x, u32 y, u32 amount, u8 colorIdx, u32 align, bool32 copy);
 static void UpdateItemData(void);
 static void Task_ReturnToItemListWaitMsg(u8 taskId);
@@ -807,11 +808,16 @@ static void Task_HandleShopMenuBuy(u8 taskId)
     FadeScreen(FADE_TO_BLACK, 0);
 }
 
+static void CB2_GoToSellMenuNewShop(void)
+{
+    GoToBagMenu(ITEMMENULOCATION_SHOP, POCKETS_COUNT, CB2_ExitSellNewShopMenu);
+}
+
 static void Task_HandleShopMenuSell(u8 taskId)
 {
     s16 *data = gTasks[taskId].data;
-    tCallbackHi = (u32)CB2_GoToSellMenu >> 16;
-    tCallbackLo = (u32)CB2_GoToSellMenu;
+    tCallbackHi = (u32)CB2_GoToSellMenuNewShop >> 16;
+    tCallbackLo = (u32)CB2_GoToSellMenuNewShop;
     gTasks[taskId].func = Task_GoToBuyOrSellMenu;
     FadeScreen(FADE_TO_BLACK, 0);
 }
@@ -824,7 +830,7 @@ void CB2_ExitSellNewShopMenu(void)
 
 static void Task_HandleShopMenuQuit(u8 taskId)
 {
-    ClearStdWindowAndFrameToTransparent(sMartInfo.windowId, COPYWIN_FULL);
+    ClearStdWindowAndFrameToTransparent(sMartInfo.windowId, FALSE);
     RemoveWindow(sMartInfo.windowId);
     TryPutSmartShopperOnAir();
     UnlockPlayerFieldControls();
@@ -861,6 +867,7 @@ static void Task_ReturnToShopMenu(u8 taskId)
 static void ShowShopMenuAfterExitingBuyOrSellMenu(u8 taskId)
 {
     CreateShopMenu(sMartInfo.martType);
+    SetShopMenuCallback(ScriptContext_Enable);
     DestroyTask(taskId);
 }
 

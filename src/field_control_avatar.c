@@ -20,6 +20,7 @@
 #include "field_specials.h"
 #include "fldeff_misc.h"
 #include "follower_npc.h"
+#include "follower_scavenge.h"
 #include "item_menu.h"
 #include "link.h"
 #include "map_preview_screen.h"
@@ -32,6 +33,7 @@
 #include "secret_base.h"
 #include "sound.h"
 #include "start_menu.h"
+#include "start_menu_book.h"
 #include "trainer_see.h"
 #include "trainer_hill.h"
 #include "vs_seeker.h"
@@ -120,7 +122,7 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
                 input->pressedAButton = TRUE;
             if (newKeys & B_BUTTON)
                 input->pressedBButton = TRUE;
-            if (newKeys & R_BUTTON && !FlagGet(DN_FLAG_SEARCHING))
+            if (newKeys & L_BUTTON && !FlagGet(DN_FLAG_SEARCHING))
                 input->pressedRButton = TRUE;
         }
 
@@ -225,7 +227,7 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     if (input->pressedStartButton && !ForestMapPreviewScreenIsRunning()) // Prevents opening the Start menu while the map preview is still fading out.
     {
         PlaySE(SE_WIN_OPEN);
-        ShowStartMenu();
+        StartBookMenu(CB2_ReturnToField);
         return TRUE;
     }
 
@@ -678,6 +680,7 @@ static bool8 TryStartStepCountScript(u16 metatileBehavior)
     UpdateFriendshipStepCounter();
     UpdateFarawayIslandStepCounter();
     UpdateFollowerStepCounter();
+    TryFollowerScavenge();
 
     if (!(gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_FORCED_MOVE) && !MetatileBehavior_IsForcedMovementTile(metatileBehavior))
     {

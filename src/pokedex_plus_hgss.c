@@ -2063,6 +2063,23 @@ void CB2_OpenPokedexPlusHGSS(void)
         SetVBlankCallback(VBlankCB_Pokedex);
         SetMainCallback2(CB2_Pokedex);
         CreatePokedexList(sPokedexView->dexMode, sPokedexView->dexOrder);
+        {
+            extern u16 gPokedexTargetSpecies;
+            if (gPokedexTargetSpecies != SPECIES_NONE)
+            {
+                u16 targetDex = SpeciesToNationalPokedexNum(gPokedexTargetSpecies);
+                u16 i;
+                for (i = 0; i < sPokedexView->pokemonListCount; i++)
+                {
+                    if (sPokedexView->pokedexList[i].dexNum == targetDex)
+                    {
+                        sPokedexView->selectedPokemon = i;
+                        break;
+                    }
+                }
+                gPokedexTargetSpecies = SPECIES_NONE;
+            }
+        }
         m4aMPlayVolumeControl(&gMPlayInfo_BGM, TRACKS_ALL, 0x80);
         break;
     }
@@ -2322,7 +2339,7 @@ static void Task_ClosePokedex(u8 taskId)
         ClearMonSprites();
         FreeWindowAndBgBuffers();
         DestroyTask(taskId);
-        SetMainCallback2(CB2_ReturnToFieldWithOpenMenu);
+        SetMainCallback2(gMain.savedCallback != NULL ? gMain.savedCallback : CB2_ReturnToFieldWithOpenMenu);
         m4aMPlayVolumeControl(&gMPlayInfo_BGM, TRACKS_ALL, 0x100);
         Free(sPokedexView);
     }

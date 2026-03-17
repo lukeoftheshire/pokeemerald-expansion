@@ -20,10 +20,19 @@
 #define FLAG_CUSTOM_SEVENTH_GYM_BEATEN         (CUSTOM_FLAGS_START + 0x8)
 #define FLAG_CUSTOM_EIGHTH_GYM_BEATEN         (CUSTOM_FLAGS_START + 0x9)
 
-// Quest Flags
+// Quest Reward Flags - each unlocks a player ability gained as a quest reward.
+// Categories (track here to keep an authoritative list):
+//   Wild Nature      -> FLAG_CAN_SEE_WILD_NATURE  (battle intro shows wild mon's nature)
+//   Wild Held Item   -> FLAG_CAN_SEE_WILD_ITEM     (battle intro shows wild mon's held item)
+//   Move Relearner   -> FLAG_CAN_USE_MOVE_RELEARNER (Move Tutor option in book menu)
+//   Stat Editor      -> FLAG_CAN_USE_STAT_EDITOR    (Stat Edit option in book menu)
 #define FLAG_CAN_SEE_WILD_NATURE                  (CUSTOM_FLAGS_START + 0x10)
 #define FLAG_CAN_SEE_WILD_ITEM                    (CUSTOM_FLAGS_START + 0x11)
-#define FLAG_CUSTOM_QUEST_1_COMPLETE         (CUSTOM_FLAGS_START + 0x12)
+#define FLAG_CAN_USE_MOVE_RELEARNER               (CUSTOM_FLAGS_START + 0x12)
+#define FLAG_CAN_USE_STAT_EDITOR                  (CUSTOM_FLAGS_START + 0x13)
+
+// Quest Progress Flags
+#define FLAG_CUSTOM_QUEST_1_COMPLETE              (CUSTOM_FLAGS_START + 0x14)
 
 // NPC Hide Flags
 #define FLAG_HIDE_CUSTOM_NPC_1               (CUSTOM_FLAGS_START + 0x20)
@@ -32,6 +41,14 @@
 // Item/Reward Flags
 #define FLAG_RECEIVED_CUSTOM_ITEM_1          (CUSTOM_FLAGS_START + 0x30)
 #define FLAG_RECEIVED_CUSTOM_ITEM_2          (CUSTOM_FLAGS_START + 0x31)
+
+// DexNav Flags (used by include/config/dexnav.h DN_FLAG_* settings)
+#define FLAG_DN_SEARCHING      (CUSTOM_FLAGS_START + 0x40)
+#define FLAG_DN_DEXNAV_GET     (CUSTOM_FLAGS_START + 0x41)
+#define FLAG_DN_DETECTOR_MODE  (CUSTOM_FLAGS_START + 0x42)
+
+// Follower Scavenge Flags (referenced by FLAG_FOLLOWER_HAS_ITEM in include/config/follower_scavenge.h)
+#define FLAG_FS_HAS_ITEM      (CUSTOM_FLAGS_START + 0x50)  // follower found an item waiting to be collected
 
 // Add more as needed...
 

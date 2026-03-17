@@ -77,6 +77,7 @@
 #include "rtc.h"
 #include "fake_rtc.h"
 #include "save.h"
+#include "start_menu.h"
 #include "start_menu_book.h"
 
 enum FollowerNPCCreateDebugMenu
@@ -262,6 +263,7 @@ static void DebugAction_Util_WatchCredits(u8 taskId);
 static void DebugAction_Util_CheatStart(u8 taskId);
 static void DebugAction_Util_Mining_Minigame(u8 taskId);
 static void DebugAction_Util_Start_Book(u8 taskId);
+static void DebugAction_Util_Start_Traditional(u8 taskId);
 
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
@@ -559,6 +561,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Mining Minigame"),   DebugAction_Util_Mining_Minigame},
     { COMPOUND_STRING("Steven Multi"),      DebugAction_ExecuteScript, Debug_EventScript_Steven_Multi },
     { COMPOUND_STRING("Start Menu Book"),   DebugAction_Util_Start_Book},
+    { COMPOUND_STRING("Traditional Menu"),  DebugAction_Util_Start_Traditional},
     { NULL }
 };
 
@@ -1612,6 +1615,12 @@ static void DebugAction_Util_Start_Book(u8 taskId)
     // This closes the debug menu and switches to your Book Callback
     Debug_DestroyMenu_Full(taskId);
     StartBookMenu(CB2_ReturnToField);
+}
+
+static void DebugAction_Util_Start_Traditional(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    ShowStartMenu();
 }
 
 void BufferExpansionVersion(struct ScriptContext *ctx)

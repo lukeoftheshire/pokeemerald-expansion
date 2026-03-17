@@ -146,6 +146,7 @@ u16 GetOverworldWeatherSpecies(u16 species);
 void UpdateFollowingPokemon(void);
 void RemoveFollowingPokemon(void);
 struct ObjectEvent *GetFollowerObject(void);
+void FollowerPlayEmote(struct ObjectEvent *followerObj, u8 emotion);
 u8 GetDirectionToFace(s16, s16, s16, s16);
 void UpdateLightSprite(struct Sprite *);
 void TrySpawnObjectEvents(s16 cameraX, s16 cameraY);

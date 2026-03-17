@@ -92,6 +92,15 @@
     },
     "msgbox": {
       "var_name": "VAR_RESULT"
+    },
+    "questmenu": {
+      "var_name": "VAR_RESULT"
+    },
+    "getcaughtmon": {
+      "var_name": "VAR_RESULT"
+    },
+    "getseenmon": {
+      "var_name": "VAR_RESULT"
     }
   }
 }

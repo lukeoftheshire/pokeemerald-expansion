@@ -582,11 +582,11 @@ static void CutGrassSpriteCallbackEnd(struct Sprite *sprite)
 
     FieldEffectStop(&gSprites[sCutGrassSpriteArrayPtr[0]], FLDEFF_CUT_GRASS);
     FREE_AND_SET_NULL(sCutGrassSpriteArrayPtr);
-    ScriptUnfreezeObjectEvents();
-    UnlockPlayerFieldControls();
 
     if (IsMewPlayingHideAndSeek() == TRUE)
         ScriptContext_SetupScript(FarawayIsland_Interior_EventScript_HideMewWhenGrassCut);
+    else
+        ScriptContext_Enable();
 }
 
 void FixLongGrassMetatilesWindowTop(s16 x, s16 y)

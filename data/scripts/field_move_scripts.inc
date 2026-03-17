@@ -464,6 +464,8 @@ EventScript_CutGrassCommon:
 	setfieldeffectargument 3, VAR_0x8004 @ Pass follower result to field effect to skip pose
 	dofieldeffect FLDEFF_USE_CUT_ON_GRASS
 	waitstate
+	releaseall
+	end
 
 @ Entry point for using Cut on grass from a menu.
 EventScript_UseCutGrass::

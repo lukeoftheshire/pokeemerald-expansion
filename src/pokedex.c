@@ -128,6 +128,15 @@ static EWRAM_DATA struct PokedexListItem *sPokedexListItem = NULL;
 COMMON_DATA u8 gUnusedPokedexU8 = 0;
 COMMON_DATA void (*gPokedexVBlankCB)(void) = NULL;
 
+// When non-zero, CB2_OpenPokedexPlusHGSS pre-positions the list cursor to this species.
+// Cleared to SPECIES_NONE after use. Set via SetPokedexOpenTarget().
+u16 gPokedexTargetSpecies = SPECIES_NONE;
+
+void SetPokedexOpenTarget(u16 species)
+{
+    gPokedexTargetSpecies = species;
+}
+
 struct SearchOptionText
 {
     const u8 *description;

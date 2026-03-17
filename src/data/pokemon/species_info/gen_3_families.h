@@ -1089,7 +1089,7 @@ const struct SpeciesInfo gSpeciesInfoGen3[] =
         .expYield = ZIGZAGOON_EXP_YIELD,
         .evYield_Speed = 1,
         .itemCommon = ITEM_ORAN_BERRY,
-        .itemRare = ITEM_ORAN_BERRY,
+        .itemRare = ITEM_ROCKY_HELMET,
         .genderRatio = PERCENT_FEMALE(50),
         .eggCycles = 15,
         .friendship = STANDARD_FRIENDSHIP,
@@ -1449,7 +1449,7 @@ const struct SpeciesInfo gSpeciesInfoGen3[] =
     #endif
         .evYield_HP = 1,
         .itemCommon = ITEM_BRIGHT_POWDER,
-        .itemRare = ITEM_BRIGHT_POWDER,
+        .itemRare = ITEM_CHOICE_SCARF,
         .genderRatio = PERCENT_FEMALE(50),
         .eggCycles = 15,
         .friendship = STANDARD_FRIENDSHIP,

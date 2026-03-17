@@ -1888,6 +1888,12 @@ static void Task_DexNavExitAndSearch(u8 taskId)
     SetMainCallback2(CB2_ReturnToField);
 }
 
+void DexNavStartSearchFromBook(void)
+{
+    SetMainCallback1(CB1_DexNavSearchCallback);
+    SetMainCallback2(CB2_ReturnToField);
+}
+
 static void Task_DexNavFadeAndExit(u8 taskId)
 {
     if (!gPaletteFade.active)

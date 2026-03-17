@@ -430,6 +430,29 @@ generated: $(AUTO_GEN_TARGETS)
 
 %.1bpp:     %.png  ; $(GFX) $< $@
 %.4bpp:     %.png  ; $(GFX) $< $@
+
+# Type stamp combined tileset: 18 individual 4bpp files concatenated in type order
+TYPESTAMP_4BPPS := \
+	graphics/type_stamps/normal.4bpp \
+	graphics/type_stamps/fighting.4bpp \
+	graphics/type_stamps/flying.4bpp \
+	graphics/type_stamps/poison.4bpp \
+	graphics/type_stamps/ground.4bpp \
+	graphics/type_stamps/rock.4bpp \
+	graphics/type_stamps/bug.4bpp \
+	graphics/type_stamps/ghost.4bpp \
+	graphics/type_stamps/steel.4bpp \
+	graphics/type_stamps/fire.4bpp \
+	graphics/type_stamps/water.4bpp \
+	graphics/type_stamps/grass.4bpp \
+	graphics/type_stamps/electric.4bpp \
+	graphics/type_stamps/psychic.4bpp \
+	graphics/type_stamps/ice.4bpp \
+	graphics/type_stamps/dragon.4bpp \
+	graphics/type_stamps/dark.4bpp \
+	graphics/type_stamps/fairy.4bpp
+graphics/type_stamps/type_stamps_all.4bpp: $(TYPESTAMP_4BPPS)
+	cat $^ > $@
 %.8bpp:     %.png  ; $(GFX) $< $@
 %.gbapal:   %.pal  ; $(GFX) $< $@
 %.gbapal:   %.png  ; $(GFX) $< $@
